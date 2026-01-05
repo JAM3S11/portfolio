@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   return (
-    <div className="bg-[#0a0f16] flex flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="bg-white dark:bg-[#0a0f16] flex flex-col items-center justify-center px-6 py-20 text-center">
       
       {/* Availability Badge */}
       <div className="mb-8 flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 transition-all hover:bg-blue-500/20">
@@ -18,12 +18,12 @@ const HomePage = () => {
       </div>
 
       {/* Hero Text */}
-      <h1 className="max-w-4xl text-5xl md:text-8xl font-bold tracking-tight text-white mb-6">
+      <h1 className="max-w-4xl text-5xl md:text-8xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">
         Hello I Am <br />
         <span className="text-blue-500">James Daniel</span>
       </h1>
 
-      <p className="max-w-2xl text-lg md:text-xl text-gray-400 leading-relaxed mb-10">
+      <p className="max-w-2xl text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-10">
         Full-Stack Developer specializing in <span className="text-white">high-performance web applications</span>. 
         I bridge the gap between complex backend logic and intuitive user experiences 
         to help brands scale their digital footprint.

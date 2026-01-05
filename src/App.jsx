@@ -4,6 +4,9 @@ import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ThemeProvider } from "./content/ThemeProvider";
 import ScrollToTop from "./common/ScrollToTop";
+import ExperienceSection from "./pages/ExperiencePage";
+import ExperiencePage from "./pages/ExperiencePage";
+import ProjectsPage from "./pages/ProjectsPage";
 
 function App() {
   return (
@@ -18,6 +21,14 @@ function App() {
     
           <section id="about">
             <AboutPage />
+          </section>
+
+          <section id="experience">
+            <ExperiencePage />
+          </section>
+
+          <section id="projects">
+            <ProjectsPage />
           </section>
         </main>
 

@@ -2,8 +2,8 @@ import React from 'react';
 
 const AboutPage = () => {
   const techStack = [
-    "JavaScript (ES6+)", "React.js", "Next.js", "Node.js", 
-    "TypeScript", "Tailwind CSS", "PostgreSQL", "AWS"
+    "JavaScript (ES6+)", "React.js", "Next.js", "Node.js", "Express", 
+    "TypeScript", "Tailwind CSS", "PostgreSQL", "MONGODB", "AWS"
   ];
 
   return (
@@ -25,18 +25,18 @@ const AboutPage = () => {
             building and improving products feel smooth and enjoyable.
           </p>
 
-          <p>
+          <p className='text-gray-700 dark:text-gray-300'>
             I believe that great software is defined by the balance between a polished user experience and a 
             robust, scalable architecture. My technical journey is centered on mastering the modern web 
-            stack—leveraging tools like <span className="text-white">React.js, Tailwind CSS, and Node.js</span>—to 
+            stack, leveraging tools like <span className="text-slate-800 dark:text-white font-medium">React.js, Tailwind CSS, Node.js, Python</span>, to 
             transform complex requirements into intuitive digital solutions. I am particularly interested in how 
             emerging technologies can be used to modernize traditional systems.
           </p>
 
-          <p>
+          <p className='text-gray-700 dark:text-gray-300'>
             Beyond writing code, I am a lifelong learner committed to staying at the forefront of industry standards. 
             Whether I am architecting a new interface or refining a backend workflow, my goal is to deliver software 
-            that is as <span className="italic text-blue-400">elegant and efficient</span> under the hood as it is on the surface.
+            that is as <span className="italic text-blue-400 underline-offset-8">elegant and efficient</span> under the hood as it is on the surface.
           </p>
         </div>
 

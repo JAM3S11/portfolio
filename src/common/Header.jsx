@@ -15,7 +15,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[#070c1a] transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[#19183B] transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         
         {/* Logo Section */}
@@ -23,7 +23,7 @@ const Header = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
             <span className="text-sm font-mono font-bold text-white">{">_"}</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">JDG</span>
+          <span className="text-xl font-bold tracking-tight dark:text-white">JDG</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -32,7 +32,7 @@ const Header = () => {
             <a 
               key={link.name} 
               href={link.path} 
-              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
+              className="text-sm font-medium text-gray-800 dark:text-white hover:text-blue-500 transition-colors"
             >
               {link.name}
             </a>
@@ -41,7 +41,7 @@ const Header = () => {
           {/* Dark Mode Toggle */}
           <button 
             onClick={toggleDarkMode}
-            className="ml-4 p-2 rounded-full hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
+            className="ml-4 p-2 rounded-full hover:bg-gray-800/10 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-white"
             aria-label="Toggle Dark Mode"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}

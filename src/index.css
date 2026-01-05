@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@theme {
+  --color-brand: #3b82f6;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  *, ::after, ::before {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}

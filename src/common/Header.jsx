@@ -1,20 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router';
 import { Menu, X, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../content/ThemeProvider';
 
 const Header = () => {
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // Logic to toggle 'dark' class on the HTML element
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-  };
 
   const navLinks = [
     { name: 'Home', path: "#home"},
@@ -24,7 +15,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-[#0a0f16] text-white">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[#070c1a] transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         
         {/* Logo Section */}

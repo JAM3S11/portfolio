@@ -31,7 +31,7 @@ const AboutPage = () => {
         
         {/* Section Heading */}
         <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">About Me</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">About Me</h2>
           <div className="w-16 h-1 bg-blue-500 rounded-full"></div>
         </div>
 

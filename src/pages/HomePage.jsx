@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   return (
-    <div className="bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300">
       
       {/* Availability Badge */}
       <div className="mb-8 flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 transition-all hover:bg-blue-500/20">
@@ -25,8 +25,7 @@ const HomePage = () => {
 
       <p className="max-w-2xl text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-10">
         Full-Stack Developer specializing in <span className="text-slate-700 dark:text-white font-bold">high-performance web applications</span>. 
-        I bridge the gap between complex backend logic and intuitive user experiences 
-        to help brands scale their digital footprint.
+        I bridge the gap between complex backend logic and intuitive user experiences.
       </p>
 
       {/* Action Buttons */}
@@ -36,28 +35,29 @@ const HomePage = () => {
           Download Resume
         </button>
         
-        <Link 
-          to="/projects"
-          className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-200 dark:hover:bg-[#232f48] text-gray-700 dark:text-white transition-all active:scale-95 hover:translate-x-2 hover:drop-shadow-2xl"
+        {/* Native Smooth Scroll Link */}
+        <a 
+          href='#projects'
+          className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-100 dark:hover:bg-[#232f48] text-gray-700 dark:text-white transition-all active:scale-95 hover:translate-x-1 hover:shadow-lg"
         >
           View Projects
-        </Link>
+        </a>
       </div>
 
       {/* Decorative Divider */}
-      <div className="w-full max-w-md h-px bg-linear-to-r from-transparent via-gray-800 to-transparent mb-12"></div>
+      <div className="w-full max-w-md h-px bg-linear-to-r from-transparent via-gray-300 dark:via-gray-800 to-transparent mb-12"></div>
 
       {/* Quick Links / Social Icons */}
       <div className="flex items-center gap-8 text-gray-500">
-        <Link to="/projects" className="transition-colors hover:text-blue-500" title="Projects">
+        <a href="#projects" className="transition-colors hover:text-blue-500" title="Projects">
           <Code2 size={24} />
-        </Link>
-        <Link to="/experience" className="transition-colors hover:text-blue-500" title="Experience">
+        </a>
+        <a href="#experience" className="transition-colors hover:text-blue-500" title="Experience">
           <Briefcase size={24} />
-        </Link>
-        <Link to="/contact" className="transition-colors hover:text-blue-500" title="Contact">
+        </a>
+        <a href="#contact" className="transition-colors hover:text-blue-500" title="Contact">
           <Mail size={24} />
-        </Link>
+        </a>
       </div>
 
     </div>

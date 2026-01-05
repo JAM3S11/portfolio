@@ -4,6 +4,10 @@
   --color-brand: #3b82f6;
 }
 
+html {
+  scroll-padding-top: 80px;
+}
+
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {

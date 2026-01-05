@@ -7,22 +7,21 @@ const AboutPage = () => {
   ];
 
   return (
-    <div className="bg-[#0a0f16] text-gray-300 px-6 py-20 md:py-32">
+    <div className="bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 md:py-32">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
         <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">About Me</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">About Me</h2>
           <div className="w-16 h-1 bg-blue-500 rounded-full"></div>
         </div>
 
         {/* Biography Content */}
         <div className="space-y-6 text-lg leading-relaxed">
-          <p>
-            I am a self-motivated <span className="text-white font-medium">Full-Stack Developer</span> and 
-            Software Development student at <span className="text-blue-400">KCA University</span> dedicated 
+          <p className='text-gray-700 dark:text-gray-300'>
+            I am a self-motivated <span className="text-slate-800 dark:text-white font-medium">Full-Stack Developer</span> dedicated 
             to the craft of building seamless, high-performance web applications. My approach to engineering 
-            is driven by a core principle: I focus on writing clean, maintainable, and readable code that makes 
+            is driven by a core principle: I focus on writing clean, maintainable and readable code that makes 
             building and improving products feel smooth and enjoyable.
           </p>
 

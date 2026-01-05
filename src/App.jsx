@@ -3,6 +3,7 @@ import Header from "./common/Header";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ThemeProvider } from "./content/ThemeProvider";
+import ScrollToTop from "./common/ScrollToTop";
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
             <AboutPage />
           </section>
         </main>
+
+        <ScrollToTop />
       </div>
     </ThemeProvider>
   );

@@ -38,7 +38,7 @@ const HomePage = () => {
         
         <Link 
           to="/projects"
-          className="flex items-center gap-2 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-50 dark:hover:bg-[#232f48] px-8 py-4 text-gray-700 dark:text-white transition-all hover:border-[#135bec] active:scale-95"
+          className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-200 dark:hover:bg-[#232f48] text-gray-700 dark:text-white transition-all active:scale-95 hover:translate-x-2 hover:drop-shadow-2xl"
         >
           View Projects
         </Link>

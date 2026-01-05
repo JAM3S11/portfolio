@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   return (
-    <div className="bg-white dark:bg-[#0a0f16] flex flex-col items-center justify-center px-6 py-20 text-center">
+    <div className="bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center">
       
       {/* Availability Badge */}
       <div className="mb-8 flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 transition-all hover:bg-blue-500/20">
@@ -24,7 +24,7 @@ const HomePage = () => {
       </h1>
 
       <p className="max-w-2xl text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-10">
-        Full-Stack Developer specializing in <span className="text-white">high-performance web applications</span>. 
+        Full-Stack Developer specializing in <span className="text-slate-700 dark:text-white font-bold">high-performance web applications</span>. 
         I bridge the gap between complex backend logic and intuitive user experiences 
         to help brands scale their digital footprint.
       </p>
@@ -38,7 +38,7 @@ const HomePage = () => {
         
         <Link 
           to="/projects"
-          className="flex items-center gap-2 rounded-xl bg-gray-800/50 border border-gray-700 px-8 py-4 font-bold text-white transition-all hover:bg-gray-800 hover:border-gray-600 active:scale-95"
+          className="flex items-center gap-2 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-50 dark:hover:bg-[#232f48] px-8 py-4 text-gray-700 dark:text-white transition-all hover:border-[#135bec] active:scale-95"
         >
           View Projects
         </Link>

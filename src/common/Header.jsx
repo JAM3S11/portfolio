@@ -8,7 +8,6 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Home', path: "#home"},
     { name: 'About', path: '#about' },
     { name: 'Experience', path: '#experience' },
     { name: 'Projects', path: '#projects' },
@@ -19,12 +18,12 @@ const Header = () => {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         
         {/* Logo Section */}
-        <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+        <a href="#home" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
             <span className="text-sm font-mono font-bold text-white">{">_"}</span>
           </div>
           <span className="text-xl font-bold tracking-tight dark:text-white">JDG</span>
-        </Link>
+        </a>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">

@@ -50,6 +50,17 @@ const ProjectsPage = () => {
       imageText: "SOLEASE",
       imageSubtext: "Comprehensive IT service management platform",
       accentColor: "text-emerald-400"
+    },
+    {
+      title: "eticketing",
+      description: "This project majorly concentrate on creating a system by using php",
+      tech: ["PHP", "MySQL", "CSS"],
+      github: "https://github.com/JAM3S11/eticketing.git",
+      live: "#",
+      image: "",
+      imageText: "ETICKETING",
+      imageSubtext: "IT Service Platform",
+      accentColor: "text-emerald-400"
     }
   ];
 

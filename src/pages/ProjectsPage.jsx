@@ -9,7 +9,9 @@ const ProjectsPage = () => {
                 <h2 className='text-3xl md:text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2'>
                     Projects
                 </h2>
-                <div className='w-16 h-1 bg-blue-500 rounded-full'></div>
+                <div className='w-16 h-1 bg-blue-500 rounded-full'>
+                  {/* Projects display is done here */}
+                </div>
             </div>
         </div>
     </div>

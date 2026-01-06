@@ -46,12 +46,12 @@ const Header = () => {
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          <Link 
-            to="/contact" 
+          <a 
+            href="#contact" 
             className="ml-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold transition-all hover:bg-blue-700 active:scale-95"
           >
             Get in Touch
-          </Link>
+          </a>
         </nav>
 
         {/* Mobile Controls */}

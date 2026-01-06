@@ -1,5 +1,6 @@
 import React from 'react';
 import { Github, ExternalLink } from 'lucide-react';
+import { title } from 'framer-motion/client';
 
 const ProjectsPage = () => {
   const projects = [
@@ -24,7 +25,19 @@ const ProjectsPage = () => {
       imageText: "Open Weather Demo",
       imageSubtext: "REST API Integration",
       accentColor: "text-emerald-400"
-    }
+    },
+    {
+      title: "Greatwall",
+      description: "Greatwall is a next-generation energy protocol designed for the Kenyan market, merging Artificial Intelligence with Web3 Transparency to build a sovereign and efficient power grid",
+      tech: ["React", "Tailwind", "Headless UI", "Lucide React"],
+      github: "https://github.com/JAM3S11/greatwall.git",
+      live: "https://greatwalllits.netlify.app/",
+      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
+      imageText: "Greatwall",
+      imageSubtext: "Next-generation energy protocol",
+      accentColor: "text-emerald-400"
+    },
+    {}
   ];
 
   return (

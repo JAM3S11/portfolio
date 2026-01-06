@@ -10,7 +10,7 @@ const ContactPage = () => {
                 <h3 className='text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2'>
                     Get in touch
                 </h3>
-                <div className='w-50 h-1 mb-12 mx-auto bg-linear-to-r from-transparent via-blue-500 to-transparent'></div>
+                <div className='w-60 h-px mb-12 mx-auto bg-linear-to-r from-transparent via-blue-500 to-transparent'></div>
             </div>
 
             {/* Contents */}
@@ -18,7 +18,7 @@ const ContactPage = () => {
 
                 {/* Left column */}
                 <div className='space-y-3'>
-                    <p className='text-2xl md:text-3xl text-gray-800 dark:text-gray-200'>
+                    <p className='text-2xl md:text-3xl text-gray-800 dark:text-gray-200 mb-2'>
                         Let's Connect
                     </p>
                     <p className='text-gray-700 dark:text-gray-400 text-lg leading-relaxed mb-8 max-w-md'>

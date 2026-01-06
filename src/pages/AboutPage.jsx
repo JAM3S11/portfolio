@@ -31,8 +31,8 @@ const AboutPage = () => {
         
         {/* Section Heading */}
         <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">About Me</h2>
-          <div className="w-16 h-1 bg-blue-500 rounded-full"></div>
+          <h2 className="text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">About Me</h2>
+          <div className="w-50 h-px bg-linear-to-r from-transparent via-blue-500 to-transparent mx-auto"></div>
         </div>
 
         {/* Biography Content */}

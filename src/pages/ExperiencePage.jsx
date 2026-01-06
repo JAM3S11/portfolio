@@ -33,10 +33,10 @@ const ExperiencePage = () => {
         
         {/* Section Heading with Blue Bar */}
         <div className="mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
+          <h2 className="text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
             Experience
           </h2>
-          <div className="w-16 h-1 bg-blue-500 rounded-full"></div>
+          <div className="w-45 h-px bg-linear-to-r from-transparent via-blue-500 to-transparent rounded-sm mx-auto"></div>
         </div>
 
         {/* Timeline Container */}

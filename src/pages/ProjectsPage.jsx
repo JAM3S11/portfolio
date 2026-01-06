@@ -1,6 +1,6 @@
 import React from 'react';
 import { Github, ExternalLink } from 'lucide-react';
-import { title } from 'framer-motion/client';
+import { image, title } from 'framer-motion/client';
 
 const ProjectsPage = () => {
   const projects = [
@@ -37,7 +37,20 @@ const ProjectsPage = () => {
       imageSubtext: "Next-generation energy protocol",
       accentColor: "text-emerald-400"
     },
-    {}
+    {
+      title: "SOLEASE",
+      description: "SolEase is a comprehensive, role-based IT service management platform designed to be a reliable ticket service solution for organizations of all types and sizes. Whether you're a private enterprise, public institution, non-profit or any organization requiring structured support operations, SolEase will provide a robust and scalable platform to streamline your support workflows.",
+      tech: [
+        "React 19", "TailwindCSS", "DaisyUI", "Zustand", "React Router", "Framer Motion", "MUI X Charts", "Axios",
+        "Node.js", "Express 5", "MongoDB", "Mongoose", "JWT", "Nodemailer", "bcrypt", "crypto"
+      ],
+      github: "https://github.com/JAM3S11/solease.git",
+      live: "#",
+      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202025-12-29%20173633.png",
+      imageText: "SOLEASE",
+      imageSubtext: "Comprehensive IT service management platform",
+      accentColor: "text-emerald-400"
+    }
   ];
 
   return (

@@ -8,6 +8,7 @@ import ExperienceSection from "./pages/ExperiencePage";
 import ExperiencePage from "./pages/ExperiencePage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ContactPage from "./pages/ContactPage";
+import Footer from "./common/Footer";
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
           </section>
         </main>
 
+        <Footer />
+        
         <ScrollToTop />
       </div>
     </ThemeProvider>

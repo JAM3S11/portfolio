@@ -59,7 +59,9 @@ const ContactPage = () => {
                         <p className='font-bold text-base text-gray-700 dark:text-gray-400 mb-2'>
                             Connect on social
                         </p>
-                        <div className='grid grid-cols-3 gap-4'></div>
+                        <div className='grid grid-cols-3 gap-4 items-start'>
+                            <div></div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -90,13 +90,13 @@ const Header = () => {
           ))}
           
           <div className="pt-4 border-t border-gray-800">
-            <Link 
-              to="/contact"
+            <a 
+              href="#contact"
               onClick={() => setIsOpen(false)}
               className="block w-full text-center rounded-lg bg-blue-600 py-4 font-bold text-white hover:bg-blue-700"
             >
               Get in Touch
-            </Link>
+            </a>
           </div>
         </nav>
       </div>

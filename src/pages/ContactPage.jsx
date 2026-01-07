@@ -1,4 +1,4 @@
-import { Github, Linkedin, Mail, Phone } from 'lucide-react';
+import { Github, Linkedin, Mail, Phone, Send } from 'lucide-react';
 import React from 'react';
 import Whatsapp from '../assets/whatsapp.svg';
 
@@ -105,7 +105,18 @@ const ContactPage = () => {
                                 className='w-full py-4 px-5 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all'
                              />
                         </div>
+                        <div>
+                            <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>Message</label>
+                            <textarea 
+                                rows="4" 
+                                placeholder="How can I help you?" 
+                                className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all resize-none'
+                            ></textarea>
+                        </div>
                     </div>
+                    <button className='w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/50'>
+                        <Send size={25} />{" "}Send Message
+                    </button>
                 </form>
             </div>
         </div>

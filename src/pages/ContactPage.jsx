@@ -11,11 +11,11 @@ const ContactPage = () => {
         { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp'className="w-6 h-6 dark:invert" />, url: import.meta.env.VITE_WHATSAPP_URL }
     ];
 
-    const handleForm = async (formSub) => {
-        formSub.preventDefault();
+    const handleForm = async (event) => {
+        event.preventDefault();
         setResults("Sending...");
 
-        const formData = new FormData(formSub.target);
+        const formData = new FormData(event.target);
 
         // Web3Form API key
         formData.append("access", import.meta.env.VITE_WEB3FORMS_COM_KEY);
@@ -29,7 +29,7 @@ const ContactPage = () => {
 
         if(data.success){
             setResults("Message sent successfully!");
-            formSub.target.reset();
+            event.target.reset();
         } else {
             console.error("Error sending", data);
             setResults(data.message);
@@ -111,6 +111,8 @@ const ContactPage = () => {
 
                 {/* Right hand side form */}
                 <form onSubmit={handleForm} className='space-y-4 bg-slate-400 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-8 rounded-xl'>
+                    <input type="hidden" name="access_key" value={import.meta.env.VITE_WEB3FORMS_COM_KEY} />
+                    
                     <div className='grid grid-cols-1 gap-4'>
                         <div>
                             <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>

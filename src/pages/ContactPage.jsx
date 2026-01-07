@@ -1,17 +1,13 @@
-import { Github, Mail, Phone } from 'lucide-react'
-import React from 'react'
+import { Github, Linkedin, Mail, Phone } from 'lucide-react';
+import React from 'react';
+import Whatsapp from '../assets/whatsapp.svg';
 
 const ContactPage = () => {
-    const DocumentationURL = import.meta.env.VITE_GITHUB_URL;
-
-    const handleDocsLink = (e) => {
-      e.preventDefault();
-      if(DocumentationURL){
-        window.open(DocumentationURL, '_blank', 'noopener,noreferrer');
-      } else {
-        console.warn('Documentation URL not found in the .env file');
-      }
-    }
+    const socialLinks = [
+        { name: "Github", icon: <Github size={25} />, url: import.meta.env.VITE_GITHUB_URL },
+        { name: "LinkedIn", icon: <Linkedin size={25} />, url: import.meta.env.VITE_LINKEDIN_URL },
+        { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp'className="w-6 h-6 dark:invert" />, url: import.meta.env.VITE_WHATSAPP_URL }
+    ]
   return (
     <div id='contact' className='bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300'>
         <div className='max-w-4xl mx-auto'>
@@ -28,7 +24,7 @@ const ContactPage = () => {
             <div className='grid md:grid-cols-2 gap-16 items-start'>
 
                 {/* Left column */}
-                <div className='space-y-3'>
+                <div className='space-y-8'>
                     <p className='text-2xl md:text-3xl text-gray-800 dark:text-gray-200 mb-2'>
                         Let's Connect
                     </p>
@@ -69,16 +65,19 @@ const ContactPage = () => {
                         <p className='font-bold text-base text-gray-700 dark:text-gray-400 mb-2'>
                             Connect on social
                         </p>
-                        <div className='grid grid-cols-3 gap-1'>
-                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
-                                <Github size={25} />
-                            </div>
-                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
-                                <Github size={25} />
-                            </div>
-                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
-                                <Github size={25} />
-                            </div>
+                        <div className='flex items-center gap-3'>
+                            {socialLinks.map((social) => (
+                                <a
+                                    key={social.name}
+                                    href={social.url}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    title={social.name}
+                                    className='w-12 h-12 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5 backdrop-blur-sm text-gray-700 dark:text-gray-400 hover:text-blue-500 hover:border-blue-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center shadow-sm'
+                                >
+                                    {social.icon}
+                                </a>
+                            ))}
                         </div>
                     </div>
                 </div>

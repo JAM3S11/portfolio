@@ -81,6 +81,32 @@ const ContactPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Right hand side form */}
+                <form className='space-y-4 bg-slate-400 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-8 rounded-xl'>
+                    <div className='grid grid-cols-1 gap-4'>
+                        <div>
+                            <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>
+                                Full Name:
+                            </label>
+                            <input
+                                type='text'
+                                placeholder='John Doe'
+                                className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all'
+                             />
+                        </div>
+                        <div>
+                            <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>
+                                Email
+                            </label>
+                            <input
+                                type='email'
+                                placeholder='johndoe@gmail.com'
+                                className='w-full py-4 px-5 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all'
+                             />
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

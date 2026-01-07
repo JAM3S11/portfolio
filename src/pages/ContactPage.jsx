@@ -1,7 +1,17 @@
-import { Mail, Phone } from 'lucide-react'
+import { Github, Mail, Phone } from 'lucide-react'
 import React from 'react'
 
 const ContactPage = () => {
+    const DocumentationURL = import.meta.env.VITE_GITHUB_URL;
+
+    const handleDocsLink = (e) => {
+      e.preventDefault();
+      if(DocumentationURL){
+        window.open(DocumentationURL, '_blank', 'noopener,noreferrer');
+      } else {
+        console.warn('Documentation URL not found in the .env file');
+      }
+    }
   return (
     <div id='contact' className='bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300'>
         <div className='max-w-4xl mx-auto'>
@@ -59,8 +69,16 @@ const ContactPage = () => {
                         <p className='font-bold text-base text-gray-700 dark:text-gray-400 mb-2'>
                             Connect on social
                         </p>
-                        <div className='grid grid-cols-3 gap-4 items-start'>
-                            <div></div>
+                        <div className='grid grid-cols-3 gap-1'>
+                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
+                                <Github size={25} />
+                            </div>
+                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
+                                <Github size={25} />
+                            </div>
+                            <div className='w-10 h-10 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm hover:border-blue-500/50 transition-all duration-300 flex items-center justify-center'>
+                                <Github size={25} />
+                            </div>
                         </div>
                     </div>
                 </div>

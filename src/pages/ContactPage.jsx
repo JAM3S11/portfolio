@@ -1,13 +1,40 @@
 import { Github, Linkedin, Mail, Phone, Send } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import Whatsapp from '../assets/whatsapp.svg';
 
 const ContactPage = () => {
+    const [result, setResults] = useState("");
+
     const socialLinks = [
         { name: "Github", icon: <Github size={25} />, url: import.meta.env.VITE_GITHUB_URL },
         { name: "LinkedIn", icon: <Linkedin size={25} />, url: import.meta.env.VITE_LINKEDIN_URL },
         { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp'className="w-6 h-6 dark:invert" />, url: import.meta.env.VITE_WHATSAPP_URL }
-    ]
+    ];
+
+    const handleForm = async (formSub) => {
+        formSub.preventDefault();
+        setResults("Sending...");
+
+        const formData = new FormData(formSub.target);
+
+        // Web3Form API key
+        formData.append("access", import.meta.env.VITE_WEB3FORMS_COM_KEY);
+
+        const response = await fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if(data.success){
+            setResults("Message sent successfully!");
+            formSub.target.reset();
+        } else {
+            console.error("Error sending", data);
+            setResults(data.message);
+        }
+    }
   return (
     <div id='contact' className='bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300'>
         <div className='max-w-4xl mx-auto'>
@@ -83,13 +110,15 @@ const ContactPage = () => {
                 </div>
 
                 {/* Right hand side form */}
-                <form className='space-y-4 bg-slate-400 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-8 rounded-xl'>
+                <form onSubmit={handleForm} className='space-y-4 bg-slate-400 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-8 rounded-xl'>
                     <div className='grid grid-cols-1 gap-4'>
                         <div>
                             <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>
                                 Full Name:
                             </label>
                             <input
+                                name='name'
+                                required
                                 type='text'
                                 placeholder='John Doe'
                                 className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all'
@@ -100,6 +129,8 @@ const ContactPage = () => {
                                 Email
                             </label>
                             <input
+                                name='email'
+                                required
                                 type='email'
                                 placeholder='johndoe@gmail.com'
                                 className='w-full py-4 px-5 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all'
@@ -108,6 +139,8 @@ const ContactPage = () => {
                         <div>
                             <label className='block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1'>Message</label>
                             <textarea 
+                                name='message'
+                                required
                                 rows="4" 
                                 placeholder="How can I help you?" 
                                 className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-blue-500 text-gray-800 dark:text-white transition-all resize-none'
@@ -117,6 +150,9 @@ const ContactPage = () => {
                     <button className='w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/50'>
                         <Send size={25} />{" "}Send Message
                     </button>
+
+                    {/* Results panel */}
+                    <p className='text-center text-sm font-medium text-blue-500 mt-2'>{result}</p>
                 </form>
             </div>
         </div>

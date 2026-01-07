@@ -1,10 +1,14 @@
 import React from 'react';
 import { Download, Code2, Briefcase, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const HomePage = () => {
   return (
-    <div className="bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0}}
+      transition={{ duration: 0.5 }}
+      className="bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300">
       
       {/* Availability Badge */}
       <div className="mb-8 flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 transition-all hover:bg-blue-500/20">
@@ -60,7 +64,7 @@ const HomePage = () => {
         </a>
       </div>
 
-    </div>
+    </motion.div>
   );
 };
 

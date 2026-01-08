@@ -31,7 +31,7 @@ const ProjectsPage = () => {
       description: "A sovereign energy protocol merging AI and Web3 to decentralize the power grid, enhancing transparency and efficiency in the Kenyan energy sector.",
       tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Framer Motion", "Web3.js"],
       github: "https://github.com/JAM3S11/greatwall.git",
-      live: "https://greatwalllits.netlify.app/",
+      live: "https://greatwallhub.vercel.app/",
       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
       imageText: "Greatwall",
       imageSubtext: "Next-generation energy protocol",

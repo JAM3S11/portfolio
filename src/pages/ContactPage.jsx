@@ -93,6 +93,7 @@ const ContactPage = () => {
                             ].map((item, idx) => (
                                 <motion.a 
                                     key={idx}
+                                    href={item.href}
                                     whileHover={{ x: 10 }}
                                     className='flex items-center gap-4 bg-slate-100 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl group transition-all'
                                 >

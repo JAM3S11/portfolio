@@ -91,7 +91,7 @@ const ContactPage = () => {
                                 { icon: <Mail size={25} />, label: "Mail", value: "jdndirangu2020@gmail.com", href: "mailto:jdndirangu2020@gmail.com" },
                                 { icon: <Phone size={25} />, label: "Phone", value: "+254 716 041419", href: "tel+254716041419" }
                             ].map((item, idx) => (
-                                <motion.div 
+                                <motion.a 
                                     key={idx}
                                     whileHover={{ x: 10 }}
                                     className='flex items-center gap-4 bg-slate-100 dark:bg-[#111827]/50 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl group transition-all'
@@ -107,7 +107,7 @@ const ContactPage = () => {
                                             {item.value}
                                         </p>
                                     </div>
-                                </motion.div>
+                                </motion.a>
                             ))}
                         </div>
 

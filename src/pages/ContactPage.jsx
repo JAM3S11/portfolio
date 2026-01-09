@@ -89,7 +89,7 @@ const ContactPage = () => {
                         <div className='space-y-4'>
                             {[
                                 { icon: <Mail size={25} />, label: "Mail", value: "jdndirangu2020@gmail.com", href: "mailto:jdndirangu2020@gmail.com" },
-                                { icon: <Phone size={25} />, label: "Phone", value: "+254 716 041419", href: "tel+254716041419" }
+                                { icon: <Phone size={25} />, label: "Phone", value: "+254 716 041419", href: "tel:+254716041419" }
                             ].map((item, idx) => (
                                 <motion.a 
                                     key={idx}

@@ -6,7 +6,7 @@ const Footer = () => {
         <div className='max-w-4xl mx-auto border-t border-gray-100 dark:border-[#232f48] py-8'>
 
             <div className='flex items-center flex-col gap-2'>
-                <p className='text-gray-500 dark:text-gray-400 text-base font-medium'>©️{new Date().getFullYear()} All rights reserved</p>
+                <p className='text-gray-500 dark:text-gray-400 text-base font-medium'>&copy; {new Date().getFullYear()} All rights reserved</p>
                 <a 
                     href='https://github.com/JAM3S11'
                     target='_blank'

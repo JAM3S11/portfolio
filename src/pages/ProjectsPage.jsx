@@ -1,67 +1,73 @@
 import React from 'react';
-import { Github, ExternalLink } from 'lucide-react';
+import { Github, ExternalLink, Pin } from 'lucide-react';
+import { MdElectricBolt } from "react-icons/md";
 import { motion } from 'framer-motion';
 
 const ProjectsPage = () => {
   const projects = [
-    {
-      title: "Franatech Website",
-      description: "A professional corporate landing page designed for technical services, focusing on conversion-driven UI and seamless responsive performance.",
-      tech: ["HTML", "CSS", "Javascript"],
-      github: "https://github.com/JAM3S11/franatech-website-template.git",
-      live: "https://franatech-website-template.vercel.app/",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20153752.png",
-      imageText: "Franatech",
-      imageSubtext: "Modern website illustration",
-      accentColor: "text-emerald-400"
-    },
-    {
-      title: "Open Weather Demo",
-      description: "A real-time weather tracking application utilizing RESTful APIs to deliver accurate meteorological data with a focus on clean data visualization.",
-      tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Axios"],
-      github: "https://openweatherapidemo.vercel.app/",
-      live: "https://openweatherapidemo.vercel.app/",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20154823.png",
-      imageText: "Open Weather Demo",
-      imageSubtext: "REST API Integration",
-      accentColor: "text-emerald-400"
-    },
-    {
-      title: "Greatwall",
-      description: "A sovereign energy protocol merging AI and Web3 to decentralize the power grid, enhancing transparency and efficiency in the Kenyan energy sector.",
-      tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Framer Motion", "Web3.js"],
-      github: "https://github.com/JAM3S11/greatwall.git",
-      live: "https://greatwallhub.vercel.app/",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
-      imageText: "Greatwall",
-      imageSubtext: "Next-generation energy protocol",
-      accentColor: "text-emerald-400"
-    },
-    {
-      title: "SOLEASE",
-      description: "A full-scale ITSM platform featuring role-based access control, automated ticketing workflows, and real-time data analytics for organizational support.",
-      tech: [
-        "React 19", "TailwindCSS", "DaisyUI", "Zustand", "React Router", "Framer Motion", "MUI X Charts", "Axios",
-        "Node.js", "Express 5", "MongoDB", "Mongoose", "JWT", "Nodemailer", "bcrypt", "crypto"
-      ],
-      github: "https://github.com/JAM3S11/solease.git",
-      live: "#",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202025-12-29%20173633.png",
-      imageText: "SOLEASE",
-      imageSubtext: "Comprehensive IT service management platform",
-      accentColor: "text-emerald-400"
-    },
-    {
-      title: "eticketing",
-      description: "A server-side IT support management system built with PHP and MySQL, streamlining ticket lifecycle management and inter-departmental collaboration.",
-      tech: ["PHP", "MySQL", "CSS", "Bootstrap", "AJAX"],
-      github: "https://github.com/JAM3S11/eticketing.git",
-      live: "#",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png", // Replaced broken # with placeholder
-      imageText: "ETICKETING",
-      imageSubtext: "IT Service Platform",
-      accentColor: "text-emerald-400"
-    }
+     {
+       title: "Franatech Website",
+       description: "A professional corporate landing page designed for technical services, focusing on conversion-driven UI and seamless responsive performance.",
+       tech: ["HTML", "CSS", "Javascript"],
+       github: "https://github.com/JAM3S11/franatech-website-template.git",
+       live: "https://franatech-website-template.vercel.app/",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20153752.png",
+       imageText: "Franatech",
+       imageSubtext: "Modern website illustration",
+       accentColor: "text-emerald-400",
+       status: "Completed"
+     },
+     {
+       title: "Open Weather Demo",
+       description: "A real-time weather tracking application utilizing RESTful APIs to deliver accurate meteorological data with a focus on clean data visualization.",
+       tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Axios"],
+       github: "https://openweatherapidemo.vercel.app/",
+       live: "https://openweatherapidemo.vercel.app/",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20154823.png",
+       imageText: "Open Weather Demo",
+       imageSubtext: "REST API Integration",
+       accentColor: "text-emerald-400",
+       status: "Completed"
+     },
+     {
+       title: "Greatwall",
+       description: "A sovereign energy protocol merging AI and Web3 to decentralize the power grid, enhancing transparency and efficiency in the Kenyan energy sector.",
+       tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Framer Motion", "Web3.js"],
+       github: "https://github.com/JAM3S11/greatwall.git",
+       live: "https://greatwallhub.vercel.app/",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
+       imageText: "Greatwall",
+       imageSubtext: "Next-generation energy protocol",
+       accentColor: "text-emerald-400",
+       status: "InProgress"
+     },
+     {
+       title: "SOLEASE",
+       description: "A full-scale ITSM platform featuring role-based access control, automated ticketing workflows, and real-time data analytics for organizational support.",
+       tech: [
+         "React 19", "TailwindCSS", "DaisyUI", "Zustand", "React Router", "Framer Motion", "MUI X Charts", "Axios",
+         "Node.js", "Express 5", "MongoDB", "Mongoose", "JWT", "Nodemailer", "bcrypt", "crypto"
+       ],
+       github: "https://github.com/JAM3S11/solease.git",
+       live: "#",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202025-12-29%20173633.png",
+       imageText: "SOLEASE",
+       imageSubtext: "Comprehensive IT service management platform",
+       accentColor: "text-emerald-400",
+       status: "InProgress"
+     },
+     {
+       title: "eticketing",
+       description: "A server-side IT support management system built with PHP and MySQL, streamlining ticket lifecycle management and inter-departmental collaboration.",
+       tech: ["PHP", "MySQL", "CSS", "Bootstrap", "AJAX"],
+       github: "https://github.com/JAM3S11/eticketing.git",
+       live: "#",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png", // Replaced broken # with placeholder
+       imageText: "ETICKETING",
+       imageSubtext: "IT Service Platform",
+       accentColor: "text-emerald-400",
+       status: "Completed"
+     }
   ];
 
   // Animation Variants
@@ -134,15 +140,21 @@ const ProjectsPage = () => {
                     className="absolute inset-0 w-full h-full object-cover"
                   />
 
-                  {/* Hover Overlay */}
-                  <div className='absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md'>
-                    <h3 className={`text-3xl font-black mb-2 tracking-tighter translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ${project.accentColor}`}>
-                      {project.imageText}
-                    </h3>
-                    <p className='text-[10px] text-gray-100 uppercase tracking-[0.2em] font-medium translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75'>
-                      {project.imageSubtext}
-                    </p>
-                  </div>
+                   {/* Hover Overlay */}
+                   <div className='absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md'>
+                     <h3 className={`text-3xl font-black mb-2 tracking-tighter translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ${project.accentColor}`}>
+                       {project.imageText}
+                     </h3>
+                     <p className='text-[10px] text-gray-100 uppercase tracking-[0.2em] font-medium translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75'>
+                       {project.imageSubtext}
+                     </p>
+                   </div>
+
+                   {/* Status Badge */}
+                   <div className={`absolute top-2 right-2 z-20 flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase rounded-full shadow-md tracking-wider origin-right transform transition-all duration-300 group-hover:scale-105 backdrop-blur-sm bg-white/10 border border-white/20 text-blue-700/80`}>
+                     {project.status === 'Completed' ? <Pin size={14} /> : <MdElectricBolt size={14} />}
+                     {project.status}
+                   </div>
                 </div>
 
                 {/* Project Content */}

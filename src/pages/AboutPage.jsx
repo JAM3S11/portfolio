@@ -16,8 +16,8 @@ const AboutPage = () => {
       skills: ["AWS", "Docker", "Git", "Vite", "REST APIs"]
     },
     {
-      title: "AI",
-      skills: ["Gemini CLI", "Opencode"]
+      title: "AI & IDE",
+      skills: ["Gemini CLI", "Opencode", "Cursor AI"]
     },
     {
       title: "Tools & Devops",

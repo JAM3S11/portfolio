@@ -62,7 +62,7 @@ const ProjectsPage = () => {
        tech: ["PHP", "MySQL", "CSS", "Bootstrap", "AJAX"],
        github: "https://github.com/JAM3S11/eticketing.git",
        live: "#",
-       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png", // Replaced broken # with placeholder
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
        imageText: "ETICKETING",
        imageSubtext: "IT Service Platform",
        accentColor: "text-emerald-400",
@@ -130,15 +130,17 @@ const ProjectsPage = () => {
                 whileHover={{ y: -10 }}
                 className='flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111827]/50 overflow-hidden hover:border-blue-500/50 transition-all duration-300 group shadow-sm hover:shadow-2xl hover:shadow-blue-500/10'
               >
-                {/* Image preview */}
-                <div className='relative h-52 bg-[#0d1117] overflow-hidden border-b border-gray-200 dark:border-gray-800'>
-                  <motion.img 
-                    src={project.image} 
-                    alt={project.title}
-                    whileHover={{ scale: 1.15 }}
-                    transition={{ duration: 0.6 }}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
+                 {/* Image preview */}
+                 <div className={`relative h-52 overflow-hidden border-b border-gray-200 dark:border-gray-800 ${project.title === 'eticketing' ? 'bg-linear-to-br from-[#19183B] to-[#0d1117]' : 'bg-[#0d1117]'}`}>
+                   {project.title !== 'eticketing' && (
+                     <motion.img
+                       src={project.image}
+                       alt={project.title}
+                       whileHover={{ scale: 1.15 }}
+                       transition={{ duration: 0.6 }}
+                       className="absolute inset-0 w-full h-full object-cover"
+                     />
+                   )}
 
                    {/* Hover Overlay */}
                    <div className='absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md'>

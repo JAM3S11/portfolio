@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, ExternalLink, Pin } from 'lucide-react';
+import { Github, ExternalLink, Pin, SignalMedium } from 'lucide-react';
 import { MdElectricBolt } from "react-icons/md";
 import { motion } from 'framer-motion';
 
@@ -67,6 +67,18 @@ const ProjectsPage = () => {
        imageSubtext: "IT Service Platform",
        accentColor: "text-emerald-400",
        status: "Completed"
+     },
+     {
+      title: "HOSPITABILITY",
+      description: "Hospitality Kenya is a premium provider of hospitality supplies, delivering excellence from industrial detergents to luxury amenities across Kenya.",
+      tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
+      github: "https://github.com/JAM3S11/hospitality.git",
+      live: "https://hospitality-ke.vercel.app",
+      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-25%20152328.png",
+      imageText: "HOSPITALITY",
+      imageSubtext: "Hospitality service provider",
+      accentColor: "text-emerald-400",
+      status: "Demo Illustration"
      }
   ];
 
@@ -154,7 +166,10 @@ const ProjectsPage = () => {
 
                    {/* Status Badge */}
                    <div className={`absolute top-2 right-2 z-20 flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase rounded-full shadow-md tracking-wider origin-right transform transition-all duration-300 group-hover:scale-105 backdrop-blur-sm bg-white/10 border border-white/20 text-blue-700/80`}>
-                     {project.status === 'Completed' ? <Pin size={14} /> : <MdElectricBolt size={14} />}
+                     {project.status === 'Completed' ? <Pin size={14} /> 
+                      : project.status === "Demo Illustration" 
+                      ? <SignalMedium size={14} /> 
+                      : <MdElectricBolt size={14} />}
                      {project.status}
                    </div>
                 </div>

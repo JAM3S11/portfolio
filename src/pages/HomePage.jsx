@@ -39,11 +39,25 @@ const HomePage = () => {
       <Particles 
         variant='snow'
         className="absolute inset-0 z-0"
-        quantity={100}
-        staticity={30}
-        ease={50}
-        color={isDarkMode ? "#ffffff" : "#000000"}
-        refresh />
+        customOptions={{
+          particles: {
+            color: {
+              value: isDarkMode ? "#ffffff" : "#000000"
+            },
+            number: {
+              value: 500
+            },
+            move: {
+              speed: {
+                min: 2,
+                max: 4
+              },
+              // direction: "bottom",
+              // straight: "true",
+              // random: false
+            }
+          }
+        }} />
       
       <div className='relative z-10 flex flex-col items-center'>
         {/* Availability Badge */}

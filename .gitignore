@@ -27,3 +27,4 @@ dist-ssr
 /src/components/animate-ui/components/
 /src/components/ui/interactive-grid-pattern.jsx
 /src/components/ui/orbiting-circles.jsx
+/src/components/ui/cloud-orbit.jsx

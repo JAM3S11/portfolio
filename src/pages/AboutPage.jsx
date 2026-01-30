@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// import { OrbitingCircles } from '@/components/ui/orbiting-circles';
+// import { CloudOrbit, OrbitingImage } from '@/components/ui/cloud-orbit';
+import { IconCloud } from '@/components/ui/icon-cloud';
 
 const AboutPage = () => {
   const techCategories = [
@@ -25,6 +26,58 @@ const AboutPage = () => {
       skills: ["Git", "Bash", "Powershell"]
     }
   ];
+  // const orbitingFrameworksData = [
+  //   {
+  //     speed: 20,
+  //     radius: 119,
+  //     size: 53,
+  //     startAt: 0.15625,
+  //     images: [
+  //       {
+  //         name: "React",
+  //         url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/react-logo.webp"
+  //       },
+  //       {
+  //         name: "Tailwind CSS",
+  //         url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/tailwindcss-logo.webp"
+  //       }
+  //     ]
+  //   }
+  // ];
+
+  const techStack = [
+    { slug: "typescript", url: "https://www.typescriptlang.org/" },
+    { slug: "javascript", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
+    { slug: "nextdotjs", url: "https://nextjs.org/" },
+    { slug: "postman", url: "https://www.postman.com/" },
+    { slug: "cursorai", url: "https://cursor.com/" },
+    { slug: "java", url: "https://www.java.com/" },
+    { slug: "react", url: "https://react.dev/" },
+    { slug: "android", url: "https://developer.android.com/" },
+    { slug: "html5", url: "https://developer.mozilla.org/en-US/docs/Web/HTML" },
+    { slug: "css3", url: "https://developer.mozilla.org/en-US/docs/Web/CSS" },
+    { slug: "express", url: "https://expressjs.com/" },
+    { slug: "amazonaws", url: "https://aws.amazon.com/" },
+    { slug: "postgresql", url: "https://www.postgresql.org/" },
+    { slug: "firebase", url: "https://firebase.google.com/" },
+    { slug: "nginx", url: "https://www.nginx.com/" },
+    { slug: "vercel", url: "https://vercel.com/" },
+    { slug: "jest", url: "https://jestjs.io/" },
+    { slug: "docker", url: "https://www.docker.com/" },
+    { slug: "git", url: "https://git-scm.com/" },
+    { slug: "github", url: "https://github.com/" },
+    { slug: "gitlab", url: "https://about.gitlab.com/" },
+    { slug: "visualstudiocode", url: "https://code.visualstudio.com/" },
+    { slug: "androidstudio", url: "https://developer.android.com/studio" },
+    { slug: "canva", url: "https://www.canva.com/" },
+    { slug: "figma", url: "https://www.figma.com/" },
+  ];
+  
+  const images = techStack.map(item => 
+    item.slug === "cursorai" 
+      ? "https://mintlify.s3-us-west-1.amazonaws.com/cursor/logo/light.png"
+      : `https://cdn.simpleicons.org/${item.slug}`
+  );
 
   // Animation variants
   const fadeInVariant = {
@@ -45,7 +98,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div id="about" className="bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 md:py-32 transition-colors duration-300">
+    <div id="about" className="bg-white dark:bg-[#19183B] text-gray-300 px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -89,12 +142,12 @@ const AboutPage = () => {
         </motion.div>
 
         {/* Modern Tech Showcase Section */}
-        <div className="mt-20">
+        <div className="mt-12 space-y-1 flex flex-col">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="flex items-center gap-4 mb-8"
+            className="flex items-center gap-4 mb-2"
           >
              <h3 className="text-base font-bold tracking-[0.2em] text-gray-700 dark:text-gray-300 uppercase">
                Core Technologies
@@ -107,10 +160,45 @@ const AboutPage = () => {
             ></motion.div>
           </motion.div>
           
-          {/* <div>
-            <OrbitingCircles></OrbitingCircles>
-          </div> */}
-          <motion.div 
+          {/* <motion.div
+            initial={{ opacity: 0, x: -20}}
+            whileInView={{ opacity: 1, x: 0}}
+            viewport={{ once: true}}
+            className='relative isolate flex items-center justify-center w-full h-64 mb-12 overflow-hidden'>
+            <CloudOrbit
+              duration={3}
+              size={110}
+              images={[
+                {
+                  name: "James Daniel",
+                  url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/avatar-1.webp",
+                },
+                {
+                  name: "JDG",
+                  url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/avatar-2.webp"
+                }
+              ]}>
+              {orbitingFrameworksData.map((orbit, index) => (
+                <OrbitingImage 
+                  key={index}
+                  speed={orbit.speed}
+                  radius={orbit.radius}
+                  size={orbit.size}
+                  startAt={orbit.startAt}
+                  images={orbit.images}
+                  duration={3}
+                />
+              ))}
+            </CloudOrbit>
+          </motion.div> */}
+          <motion.div
+            initial={{ opacity: 0, x: -20}}
+            whileInView={{ opacity: 1, x: 0}}
+            viewport={{ once: true}}
+            className='relative isolate flex items-center justify-center w-full h-[500px] -mt-10 mb-0'>
+            <IconCloud images={images} techData={techStack} />
+          </motion.div>
+          {/* <motion.div 
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -139,7 +227,7 @@ const AboutPage = () => {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </motion.div> */}
         </div>
 
       </div>

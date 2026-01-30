@@ -9,18 +9,12 @@ import ExperiencePage from "./pages/ExperiencePage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ContactPage from "./pages/ContactPage";
 import Footer from "./common/Footer";
-// import { GravityStarsBackground } from "./components/animate-ui/components/backgrounds/gravity-stars";
 
 function App() {
   return (
     <ThemeProvider>
       <div className="flex flex-col min-h-screen scroll-smooth bg-[#0a0f16]">
 
-        {/* <div className="fixed inset-0 pointer-events-none z-0 text-white">
-          <GravityStarsBackground 
-            className="size-full" 
-            starsCount={100} />
-        </div> */}
         <div className="relative z-10 flex flex-col min-h-screen">
           <Header />
       

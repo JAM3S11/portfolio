@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { OrbitingCircles } from '@/components/ui/orbiting-circles';
 
 const AboutPage = () => {
   const techCategories = [
@@ -106,6 +107,9 @@ const AboutPage = () => {
             ></motion.div>
           </motion.div>
           
+          <div>
+            <OrbitingCircles></OrbitingCircles>
+          </div>
           <motion.div 
             variants={containerVariants}
             initial="hidden"

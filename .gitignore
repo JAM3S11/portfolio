@@ -25,3 +25,5 @@ dist-ssr
 
 .env
 /src/components/animate-ui/components/
+/src/components/ui/interactive-grid-pattern.jsx
+/src/components/ui/orbiting-circles.jsx

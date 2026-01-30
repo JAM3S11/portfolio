@@ -1,7 +1,7 @@
 import React from 'react';
 import { Download, Code2, Briefcase, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TypingAnimation } from '@/components/ui/typing-animation';
+import { TypingAnimation } from '@/common/typing-animation';
 import { Particles } from '@/components/ui/particles';
 import { useTheme } from '@/content/ThemeProvider';
 

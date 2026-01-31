@@ -195,7 +195,7 @@ const AboutPage = () => {
             initial={{ opacity: 0, x: -20}}
             whileInView={{ opacity: 1, x: 0}}
             viewport={{ once: true}}
-            className='relative isolate flex items-center justify-center w-full h-[60vh] min-h-[300px] max-h-[600px] -mt-10 mb-0'>
+            className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'>
             <IconCloud images={images} techData={techStack} />
           </motion.div>
           {/* <motion.div 

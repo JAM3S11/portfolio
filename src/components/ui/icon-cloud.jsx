@@ -12,34 +12,74 @@ export function IconCloud({
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const [iconPositions, setIconPositions] = useState([])
-  const [rotation, setRotation] = useState({ x: 0, y: 0 })
+  const [rotation] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [targetRotation, setTargetRotation] = useState(null)
   const [canvasSize, setCanvasSize] = useState({ width: 1000, height: 1000 })
+  const [screenType, setScreenType] = useState({ iconScale: 1.0 })
   const animationFrameRef = useRef(0)
   const rotationRef = useRef(rotation)
   const iconCanvasesRef = useRef([])
   const imagesLoadedRef = useRef([])
 
-  // Handle responsive canvas sizing
+  // Handle responsive canvas sizing based on screen type
+  const getScreenTypeSizing = (width) => {
+    if (width < 640) {
+      // Mobile: compact sizing
+      return {
+        heightMultiplier: 0.55,
+        sizeFactor: 0.85,
+        iconScale: 0.85
+      }
+    } else if (width < 1024) {
+      // Tablet: medium sizing
+      return {
+        heightMultiplier: 0.7,
+        sizeFactor: 0.95,
+        iconScale: 0.95
+      }
+    } else if (width < 1280) {
+      // Desktop: medium-large sizing
+      return {
+        heightMultiplier: 0.78,
+        sizeFactor: 1.05,
+        iconScale: 1.05
+      }
+    } else {
+      // Large desktop: full sizing
+      return {
+        heightMultiplier: 0.85,
+        sizeFactor: 1.15,
+        iconScale: 1.25
+      }
+    }
+  }
+
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
     const resizeObserver = new ResizeObserver((entries) => {
       const { width } = entries[0].contentRect
-      const size = Math.min(width, window.innerHeight * 0.6)
+      const screenWidth = window.innerWidth
+      const sizing = getScreenTypeSizing(screenWidth)
+      
+      const size = Math.min(width * sizing.sizeFactor, window.innerHeight * sizing.heightMultiplier)
       setCanvasSize({ width: size, height: size })
+      setScreenType(sizing)
     })
 
     resizeObserver.observe(container)
     
     // Initial size
     const initialWidth = container.offsetWidth
-    const initialSize = Math.min(initialWidth, window.innerHeight * 0.6)
+    const screenWidth = window.innerWidth
+    const sizing = getScreenTypeSizing(screenWidth)
+    const initialSize = Math.min(initialWidth * sizing.sizeFactor, window.innerHeight * sizing.heightMultiplier)
     setCanvasSize({ width: initialSize, height: initialSize })
+    setScreenType(sizing)
 
     return () => resizeObserver.disconnect()
   }, [])
@@ -124,7 +164,7 @@ export function IconCloud({
         id: i,
       })
     }
-    setIconPositions(newIcons)
+    setTimeout(() => setIconPositions(newIcons), 0)
   }, [icons, images, canvasSize])
 
   // Handle mouse events
@@ -151,7 +191,7 @@ export function IconCloud({
       const screenX = canvasRef.current.width / 2 + rotatedX
       const screenY = canvasRef.current.height / 2 + rotatedY
 
-      const baseRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02
+          const baseRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02 * screenType.iconScale
       const scale = (rotatedZ + canvasSize.width * 0.2) / (canvasSize.width * 0.3)
       const radius = baseRadius * scale
       const dx = x - screenX
@@ -165,7 +205,7 @@ export function IconCloud({
         const currentY = rotationRef.current.y
         const distance = Math.sqrt(Math.pow(targetX - currentX, 2) + Math.pow(targetY - currentY, 2))
 
-        const duration = Math.min(2000, Math.max(800, distance * 1000))
+        const duration = Math.min(2000, Math.max(600, distance * 800))
 
         setTargetRotation({
           x: targetX,
@@ -274,12 +314,12 @@ export function IconCloud({
             iconCanvasesRef.current[index] &&
             imagesLoadedRef.current[index]
           ) {
-            const iconSize = Math.min(canvasSize.width, canvasSize.height) * 0.04
+            const iconSize = Math.min(canvasSize.width, canvasSize.height) * 0.04 * screenType.iconScale
             ctx.drawImage(iconCanvasesRef.current[index], -iconSize/2, -iconSize/2, iconSize, iconSize)
           }
         } else {
           // Show numbered circles if no icons/images are provided
-          const circleRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02
+          const circleRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02 * screenType.iconScale
           ctx.beginPath()
           ctx.arc(0, 0, circleRadius, 0, Math.PI * 2)
           ctx.fillStyle = "#4444ff"
@@ -287,7 +327,7 @@ export function IconCloud({
           ctx.fillStyle = "white"
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
-          ctx.font = `${Math.min(canvasSize.width, canvasSize.height) * 0.016}px Arial`
+          ctx.font = `${Math.min(canvasSize.width, canvasSize.height) * 0.016 * screenType.iconScale}px Arial`
           ctx.fillText(`${icon.id + 1}`, 0, 0)
         }
 
@@ -303,7 +343,7 @@ export function IconCloud({
         cancelAnimationFrame(animationFrameRef.current)
       }
     };
-  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation, canvasSize])
+  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation, canvasSize, screenType.iconScale])
 
   return (
     <div 

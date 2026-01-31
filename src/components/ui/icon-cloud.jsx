@@ -10,16 +10,39 @@ export function IconCloud({
   images
 }) {
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
   const [iconPositions, setIconPositions] = useState([])
   const [rotation, setRotation] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [targetRotation, setTargetRotation] = useState(null)
+  const [canvasSize, setCanvasSize] = useState({ width: 1000, height: 1000 })
   const animationFrameRef = useRef(0)
   const rotationRef = useRef(rotation)
   const iconCanvasesRef = useRef([])
   const imagesLoadedRef = useRef([])
+
+  // Handle responsive canvas sizing
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const { width } = entries[0].contentRect
+      const size = Math.min(width, window.innerHeight * 0.6)
+      setCanvasSize({ width: size, height: size })
+    })
+
+    resizeObserver.observe(container)
+    
+    // Initial size
+    const initialWidth = container.offsetWidth
+    const initialSize = Math.min(initialWidth, window.innerHeight * 0.6)
+    setCanvasSize({ width: initialSize, height: initialSize })
+
+    return () => resizeObserver.disconnect()
+  }, [])
 
   // Create icon canvases once when icons/images change
   useEffect(() => {
@@ -91,17 +114,18 @@ export function IconCloud({
       const x = Math.cos(phi) * r
       const z = Math.sin(phi) * r
 
+      const radius = Math.min(canvasSize.width, canvasSize.height) * 0.3
       newIcons.push({
-        x: x * 180,
-        y: y * 180,
-        z: z * 180,
+        x: x * radius,
+        y: y * radius,
+        z: z * radius,
         scale: 1,
         opacity: 1,
         id: i,
       })
     }
     setIconPositions(newIcons)
-  }, [icons, images])
+  }, [icons, images, canvasSize])
 
   // Handle mouse events
   const handleMouseDown = (e) => {
@@ -127,8 +151,9 @@ export function IconCloud({
       const screenX = canvasRef.current.width / 2 + rotatedX
       const screenY = canvasRef.current.height / 2 + rotatedY
 
-      const scale = (rotatedZ + 200) / 300
-      const radius = 20 * scale
+      const baseRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02
+      const scale = (rotatedZ + canvasSize.width * 0.2) / (canvasSize.width * 0.3)
+      const radius = baseRadius * scale
       const dx = x - screenX
       const dy = y - screenY
 
@@ -236,7 +261,7 @@ export function IconCloud({
         const rotatedY = icon.y * cosX + rotatedZ * sinX
 
         const scale = (rotatedZ + 200) / 300
-        const opacity = Math.max(0.2, Math.min(1, (rotatedZ + 150) / 200))
+        const opacity = Math.max(0.2, Math.min(1, (rotatedZ + canvasSize.width * 0.15) / (canvasSize.width * 0.2)))
 
         ctx.save()
         ctx.translate(canvas.width / 2 + rotatedX, canvas.height / 2 + rotatedY)
@@ -249,18 +274,20 @@ export function IconCloud({
             iconCanvasesRef.current[index] &&
             imagesLoadedRef.current[index]
           ) {
-            ctx.drawImage(iconCanvasesRef.current[index], -20, -20, 40, 40)
+            const iconSize = Math.min(canvasSize.width, canvasSize.height) * 0.04
+            ctx.drawImage(iconCanvasesRef.current[index], -iconSize/2, -iconSize/2, iconSize, iconSize)
           }
         } else {
           // Show numbered circles if no icons/images are provided
+          const circleRadius = Math.min(canvasSize.width, canvasSize.height) * 0.02
           ctx.beginPath()
-          ctx.arc(0, 0, 20, 0, Math.PI * 2)
+          ctx.arc(0, 0, circleRadius, 0, Math.PI * 2)
           ctx.fillStyle = "#4444ff"
           ctx.fill()
           ctx.fillStyle = "white"
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
-          ctx.font = "16px Arial"
+          ctx.font = `${Math.min(canvasSize.width, canvasSize.height) * 0.016}px Arial`
           ctx.fillText(`${icon.id + 1}`, 0, 0)
         }
 
@@ -276,19 +303,29 @@ export function IconCloud({
         cancelAnimationFrame(animationFrameRef.current)
       }
     };
-  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation])
+  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation, canvasSize])
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={1000}
-      height={1000}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="rounded-lg"
-      aria-label="Interactive 3D Icon Cloud"
-      role="img" />
+    <div 
+      ref={containerRef}
+      className="w-full h-full flex items-center justify-center"
+    >
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className="rounded-lg max-w-full max-h-full"
+        aria-label="Interactive 3D Icon Cloud"
+        role="img"
+        style={{ 
+          width: canvasSize.width, 
+          height: canvasSize.height,
+          touchAction: 'none'
+        }} />
+    </div>
   );
 }

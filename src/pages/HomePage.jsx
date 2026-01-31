@@ -2,8 +2,10 @@ import React from 'react';
 import { Download, Code2, Briefcase, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TypingAnimation } from '@/common/typing-animation';
-import { Particles } from '@/components/ui/particles';
+// import { Particles } from '@/components/ui/particles';
 import { useTheme } from '@/content/ThemeProvider';
+import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern';
+import { cn } from '@/lib/utils';
 
 const HomePage = () => {
   const { isDarkMode } = useTheme();
@@ -36,7 +38,7 @@ const HomePage = () => {
       className="relative bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300 overflow-hidden"
     >
       
-      <Particles 
+      {/* <Particles 
         variant='snow'
         className="absolute inset-0 z-0"
         customOptions={{
@@ -57,7 +59,14 @@ const HomePage = () => {
               // random: false
             }
           }
-        }} />
+        }} /> */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
+        <InteractiveGridPattern 
+          className={cn(
+            "[mask-image:radial-gradient(400px_circle_at_center,white,transparent)]",
+            "inset-x-0 inset-y-[-30%] h-[200%]"
+          )} />
+      </div>
       
       <div className='relative z-10 flex flex-col items-center'>
         {/* Availability Badge */}

@@ -97,7 +97,7 @@ const HomePage = () => {
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-4 mb-16">
           <motion.a 
             href="/JAMES_DANIEL_CV.pdf"
-            download="James_Daniel_Resume.pdf"
+            download="JAMES_DANIEL_CV.pdf"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 font-bold text-white transition-all hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]"

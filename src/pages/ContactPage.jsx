@@ -11,7 +11,7 @@ const ContactPage = () => {
     const socialLinks = [
         { name: "Github", icon: <Github size={25} />, url: import.meta.env.VITE_GITHUB_URL },
         { name: "LinkedIn", icon: <Linkedin size={25} />, url: import.meta.env.VITE_LINKEDIN_URL },
-        { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp' className="w-6 h-6 dark:invert" />, url: `${import.meta.env.VITE_WHATSAPP_URL}?text=${encodeURIComponent(message)}}` }
+        { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp' className="w-6 h-6 dark:invert" />, url: `${import.meta.env.VITE_WHATSAPP_URL}?text=${encodeURIComponent(message)}` }
     ];
 
     const handleForm = async (event) => {

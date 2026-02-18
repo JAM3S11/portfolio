@@ -7,10 +7,11 @@ const ContactPage = () => {
     const [result, setResults] = useState("");
     const [status, setStatus] = useState("idle"); // idle, loading, success
 
+    const message = "Hello! Thank you for reaching out. What challenge can I help you solve today? Whether you have a general inquiry or need a system solution, feel free to share.";
     const socialLinks = [
         { name: "Github", icon: <Github size={25} />, url: import.meta.env.VITE_GITHUB_URL },
         { name: "LinkedIn", icon: <Linkedin size={25} />, url: import.meta.env.VITE_LINKEDIN_URL },
-        { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp' className="w-6 h-6 dark:invert" />, url: import.meta.env.VITE_WHATSAPP_URL }
+        { name: "WhatsApp", icon: <img src={Whatsapp} alt='WhatsApp' className="w-6 h-6 dark:invert" />, url: `${import.meta.env.VITE_WHATSAPP_URL}?text=${encodeURIComponent(message)}}` }
     ];
 
     const handleForm = async (event) => {

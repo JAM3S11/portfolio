@@ -1,50 +1,58 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// import { CloudOrbit, OrbitingImage } from '@/components/ui/cloud-orbit';
 import { IconCloud } from '@/components/ui/icon-cloud';
+import { AnimatedList } from '@/components/ui/animated-list';
+
+const getTechCategory = (slug) => {
+  const categoryMap = {
+    react: "Frontend", nextdotjs: "Frontend", typescript: "Frontend", javascript: "Frontend",
+    html5: "Frontend", css3: "Frontend", tailwindcss: "Frontend",
+    express: "Backend", postgresql: "Database", mongodb: "Database", python: "Backend", nodejs: "Backend",
+    amazonaws: "Cloud", docker: "DevOps", git: "DevOps", github: "DevOps", gitlab: "DevOps",
+    vercel: "Cloud", firebase: "Cloud", nginx: "Cloud",
+    visualstudiocode: "IDE", androidstudio: "IDE", cursorai: "AI", figma: "Design", canva: "Design",
+    postman: "Tools", jest: "Testing", android: "Mobile"
+  };
+  return categoryMap[slug] || "Tools";
+};
+
+const TechNotification = ({ tech }) => {
+  const category = getTechCategory(tech.slug);
+  const displayName = tech.slug === "nextdotjs" ? "Next.js" 
+    : tech.slug === "amazonaws" ? "AWS"
+    : tech.slug === "html5" ? "HTML5"
+    : tech.slug === "css3" ? "CSS3"
+    : tech.slug === "cursorai" ? "Cursor AI"
+    : tech.slug.replace(/([A-Z])/g, ' $1').trim();
+
+  return (
+    <a
+      href={tech.url}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Open ${displayName} documentation in a new tab`}
+      className="group flex w-full max-w-[330px] items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white/80 px-4 py-3 shadow-sm shadow-neutral-200/60 backdrop-blur-sm transition-all hover:border-blue-500/60 hover:shadow-[0_14px_40px_rgba(37,99,235,0.18)] hover:-translate-y-1 active:translate-y-0 dark:border-neutral-700/70 dark:bg-neutral-900/80 dark:shadow-neutral-900/60"
+    >
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 ring-2 ring-blue-500/0 group-hover:ring-blue-500/30 transition-colors">
+        <img 
+          src={tech.logo} 
+          alt={displayName}
+          className="h-8 w-8 object-contain"
+        />
+      </div>
+      <div className="flex min-w-0 flex-col">
+        <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+          {displayName}
+        </span>
+        <span className="text-[11px] font-medium tracking-wide text-blue-600 dark:text-blue-400">
+          {category}
+        </span>
+      </div>
+    </a>
+  );
+};
 
 const AboutPage = () => {
-  const techCategories = [
-    {
-      title: "Frontend",
-      skills: ["React.js", "Next.js", "TypeScript", "Tailwind CSS", "JavaScript (ES6+)"]
-    },
-    {
-      title: "Backend & DB",
-      skills: ["Node.js", "Express", "PostgreSQL", "MongoDB", "Python"]
-    },
-    {
-      title: "Cloud & Tools",
-      skills: ["AWS", "Docker", "Git", "Vite", "REST APIs"]
-    },
-    {
-      title: "AI & IDE",
-      skills: ["Gemini CLI", "Opencode", "Cursor AI"]
-    },
-    {
-      title: "Tools & Devops",
-      skills: ["Git", "Bash", "Powershell"]
-    }
-  ];
-  // const orbitingFrameworksData = [
-  //   {
-  //     speed: 20,
-  //     radius: 119,
-  //     size: 53,
-  //     startAt: 0.15625,
-  //     images: [
-  //       {
-  //         name: "React",
-  //         url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/react-logo.webp"
-  //       },
-  //       {
-  //         name: "Tailwind CSS",
-  //         url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/tailwindcss-logo.webp"
-  //       }
-  //     ]
-  //   }
-  // ];
-
   const techStack = [
     { slug: "typescript", url: "https://www.typescriptlang.org/" },
     { slug: "javascript", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
@@ -79,7 +87,11 @@ const AboutPage = () => {
       : `https://cdn.simpleicons.org/${item.slug}`
   );
 
-  // Animation variants
+  const techLogos = techStack.map((tech, i) => ({
+    ...tech,
+    logo: images[i]
+  }));
+
   const fadeInVariant = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
@@ -160,74 +172,36 @@ const AboutPage = () => {
             ></motion.div>
           </motion.div>
           
-          {/* <motion.div
-            initial={{ opacity: 0, x: -20}}
-            whileInView={{ opacity: 1, x: 0}}
-            viewport={{ once: true}}
-            className='relative isolate flex items-center justify-center w-full h-64 mb-12 overflow-hidden'>
-            <CloudOrbit
-              duration={3}
-              size={110}
-              images={[
-                {
-                  name: "James Daniel",
-                  url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/avatar-1.webp",
-                },
-                {
-                  name: "JDG",
-                  url: "https://cdn.badtz-ui.com/images/components/cloud-orbit/avatar-2.webp"
-                }
-              ]}>
-              {orbitingFrameworksData.map((orbit, index) => (
-                <OrbitingImage 
-                  key={index}
-                  speed={orbit.speed}
-                  radius={orbit.radius}
-                  size={orbit.size}
-                  startAt={orbit.startAt}
-                  images={orbit.images}
-                  duration={3}
-                />
-              ))}
-            </CloudOrbit>
-          </motion.div> */}
           <motion.div
             initial={{ opacity: 0, x: -20}}
             whileInView={{ opacity: 1, x: 0}}
             viewport={{ once: true}}
-            className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'>
-            <IconCloud images={images} techData={techStack} />
-          </motion.div>
-          {/* <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'
           >
-            {techCategories.map((category) => (
-              <motion.div 
-                key={category.title}
-                variants={fadeInVariant}
-                whileHover={{ y: -5, borderColor: "rgba(59, 130, 246, 0.5)" }}
-                className="group p-6 rounded-2xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 backdrop-blur-sm transition-all duration-300"
-              >
-                <h4 className="text-blue-600 dark:text-blue-400 font-bold mb-4 text-sm tracking-wide">
-                  {category.title}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {category.skills.map((skill) => (
-                    <span 
-                      key={skill}
-                      className="text-xs font-semibold py-1 px-2 rounded-md bg-white dark:bg-[#111827] text-slate-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 group-hover:border-blue-500/30 transition-colors"
-                    >
-                      {skill}
-                    </span>
+            {/* Mobile: AnimatedList */}
+            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-gradient-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-gradient-to-b dark:from-[#020617] dark:via-[#020617] dark:to-[#020617]/80">
+              <p className="mb-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
+                Tools I use day to day
+              </p>
+              <div className="h-[340px]">
+                <AnimatedList
+                  stackGap={8}
+                  columnGap={80}
+                  scaleFactor={0.02}
+                  scrollDownDuration={8}
+                  formationDuration={1.1}
+                >
+                  {techLogos.map((tech, index) => (
+                    <TechNotification key={index} tech={tech} />
                   ))}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div> */}
+                </AnimatedList>
+              </div>
+            </div>
+            {/* Desktop: IconCloud */}
+            <div className="hidden md:block w-full h-full">
+              <IconCloud images={images} techData={techStack} />
+            </div>
+          </motion.div>
         </div>
 
       </div>

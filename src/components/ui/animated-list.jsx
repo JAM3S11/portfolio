@@ -80,9 +80,9 @@ function InternalAnimatedListItem({
 export function AnimatedList({
   children,
   className,
-  stackGap = 20,
+  stackGap = 10,
   columnGap = 85,
-  scaleFactor = 0.05,
+  scaleFactor = 0.02,
   scrollDownDuration = 5,
   formationDuration = 1
 }) {

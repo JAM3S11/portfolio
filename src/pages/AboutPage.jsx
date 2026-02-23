@@ -179,7 +179,7 @@ const AboutPage = () => {
             className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'
           >
             {/* Mobile: AnimatedList */}
-            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-gradient-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-gradient-to-b dark:from-[#020617] dark:via-[#020617] dark:to-[#020617]/80">
+            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-linear-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-linear-to-b dark:from-[#020617] dark:via-[#020617] dark:to-[#020617]/80">
               <p className="mb-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
                 Tools I use day to day
               </p>
@@ -187,7 +187,7 @@ const AboutPage = () => {
                 <AnimatedList
                   stackGap={8}
                   columnGap={80}
-                  scaleFactor={0.02}
+                  scaleFactor={0}
                   scrollDownDuration={8}
                   formationDuration={1.1}
                 >

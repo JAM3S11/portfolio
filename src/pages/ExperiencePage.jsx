@@ -47,7 +47,7 @@ const ExperiencePage = () => {
   };
 
   return (
-    <section id="experience" className="bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300">
+    <section id="experience" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 py-20 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -96,7 +96,7 @@ const ExperiencePage = () => {
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-                  className="absolute left-0 top-2 z-10 h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] border-2 border-white dark:border-[#19183B]"
+                  className="absolute left-0 top-2 z-10 h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] border-2 border-white dark:border-[oklch(0.13_0.028_261.692)]"
                 ></motion.div>
 
                 {/* Experience Header */}

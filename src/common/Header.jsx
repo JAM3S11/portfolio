@@ -14,7 +14,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[#19183B] transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[oklch(0.13_0.028_261.692)] transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         
         {/* Logo Section */}

@@ -35,7 +35,7 @@ const HomePage = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative bg-white dark:bg-[#19183B] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300 overflow-hidden"
+      className="relative bg-white dark:bg-[oklch(0.13_0.028_261.692)] flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300 overflow-hidden"
     >
       
       {/* <Particles 

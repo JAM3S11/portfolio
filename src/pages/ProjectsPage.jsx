@@ -102,7 +102,7 @@ const ProjectsPage = () => {
   };
 
   return (
-    <div id="projects" className='bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300'>
+    <div id="projects" className='bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 py-20 transition-colors duration-300'>
       <div className='max-w-6xl mx-auto'>
 
         {/* Section Heading */}
@@ -143,7 +143,7 @@ const ProjectsPage = () => {
                 className='flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111827]/50 overflow-hidden hover:border-blue-500/50 transition-all duration-300 group shadow-sm hover:shadow-2xl hover:shadow-blue-500/10'
               >
                  {/* Image preview */}
-                 <div className={`relative h-52 overflow-hidden border-b border-gray-200 dark:border-gray-800 ${project.title === 'eticketing' ? 'bg-linear-to-br from-[#19183B] to-[#0d1117]' : 'bg-[#0d1117]'}`}>
+                 <div className={`relative h-52 overflow-hidden border-b border-gray-200 dark:border-gray-800 ${project.title === 'eticketing' ? 'bg-linear-to-br from-[oklch(0.13_0.028_261.692)] to-[#0d1117]' : 'bg-[#0d1117]'}`}>
                    {project.title !== 'eticketing' && (
                      <motion.img
                        src={project.image}

@@ -46,7 +46,7 @@ const ContactPage = () => {
     };
 
     return (
-        <div id='contact' className='bg-white dark:bg-[#19183B] text-gray-300 px-6 py-20 transition-colors duration-300 overflow-hidden'>
+        <div id='contact' className='bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 py-20 transition-colors duration-300 overflow-hidden'>
             <div className='max-w-4xl mx-auto'>
 
                 {/* Header section */}
@@ -154,7 +154,7 @@ const ContactPage = () => {
                                             required
                                             type={field === 'email' ? 'email' : 'text'}
                                             placeholder={field === 'name' ? 'John Doe' : 'johndoe@gmail.com'}
-                                            className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-white transition-all'
+                                                className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[oklch(0.13_0.028_261.692)] border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-white transition-all'
                                         />
                                     </div>
                                 ))}
@@ -165,7 +165,7 @@ const ContactPage = () => {
                                         required
                                         rows="4" 
                                         placeholder="How can I help you?" 
-                                        className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[#19183B] border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-white transition-all resize-none'
+                                        className='w-full px-5 py-4 rounded-2xl bg-white dark:bg-[oklch(0.13_0.028_261.692)] border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-white transition-all resize-none'
                                     ></textarea>
                                 </div>
                             </div>

@@ -110,7 +110,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div id="about" className="bg-white dark:bg-[#19183B] text-gray-300 px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
+    <div id="about" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -179,7 +179,7 @@ const AboutPage = () => {
             className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'
           >
             {/* Mobile: AnimatedList */}
-            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-linear-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-linear-to-b dark:from-[#020617] dark:via-[#020617] dark:to-[#020617]/80">
+            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-linear-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-linear-to-b dark:from-[oklch(0.18_0.028_261.692)] dark:via-[oklch(0.18_0.028_261.692)] dark:to-[oklch(0.18_0.028_261.692)]/80">
               <p className="mb-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
                 Tools I use day to day
               </p>
@@ -188,7 +188,7 @@ const AboutPage = () => {
                   stackGap={8}
                   columnGap={80}
                   scaleFactor={0}
-                  scrollDownDuration={8}
+                  scrollDownDuration={12}
                   formationDuration={1.1}
                 >
                   {techLogos.map((tech, index) => (

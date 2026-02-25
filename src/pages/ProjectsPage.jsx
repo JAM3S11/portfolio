@@ -73,7 +73,7 @@ const ProjectsPage = () => {
       description: "Hospitality Kenya is a premium provider of hospitality supplies, delivering excellence from industrial detergents to luxury amenities across Kenya.",
       tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
       github: "https://github.com/JAM3S11/hospitality.git",
-      live: "https://hospitality-ke.vercel.app",
+      live: "https://sparklesltd.vercel.app",
       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-25%20152328.png",
       imageText: "HOSPITALITY",
       imageSubtext: "Hospitality service provider",

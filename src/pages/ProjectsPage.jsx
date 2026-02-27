@@ -50,7 +50,7 @@ const ProjectsPage = () => {
        ],
        github: "https://github.com/JAM3S11/solease.git",
        live: "#",
-       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202025-12-29%20173633.png",
+       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-02-27%20235752.png",
        imageText: "SOLEASE",
        imageSubtext: "Comprehensive IT service management platform",
        accentColor: "text-emerald-400",

@@ -1,55 +1,67 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { 
+  SiReact, SiJavascript, SiTypescript, SiTailwindcss, 
+  SiNodedotjs, SiPython, SiPostgresql, SiGit, 
+  SiGithub, SiFigma, SiVite, SiExpress, SiNextdotjs,
+  SiMongodb, SiMysql, SiCanva,
+  SiSupabase
+} from 'react-icons/si';
+import { Globe, Smartphone, Rocket } from 'lucide-react';
 import { IconCloud } from '@/components/ui/icon-cloud';
-import { AnimatedList } from '@/components/ui/animated-list';
 
-const getTechCategory = (slug) => {
-  const categoryMap = {
-    react: "Frontend", nextdotjs: "Frontend", typescript: "Frontend", javascript: "Frontend",
-    html5: "Frontend", css3: "Frontend", tailwindcss: "Frontend",
-    express: "Backend", postgresql: "Database", mongodb: "Database", python: "Backend", nodejs: "Backend",
-    amazonaws: "Cloud", docker: "DevOps", git: "DevOps", github: "DevOps", gitlab: "DevOps",
-    vercel: "Cloud", firebase: "Cloud", nginx: "Cloud",
-    visualstudiocode: "IDE", androidstudio: "IDE", cursorai: "AI", figma: "Design", canva: "Design",
-    postman: "Tools", jest: "Testing", android: "Mobile"
-  };
-  return categoryMap[slug] || "Tools";
-};
+const CursorIcon = ({ size }) => (
+  <img 
+    src="https://ik.imagekit.io/jimdanliveurl/cursorImg.jpg" 
+    alt="Cursor AI" 
+    style={{ width: size, height: size }}
+    className="object-contain"
+  />
+);
 
-const TechNotification = ({ tech }) => {
-  const category = getTechCategory(tech.slug);
-  const displayName = tech.slug === "nextdotjs" ? "Next.js" 
-    : tech.slug === "amazonaws" ? "AWS"
-    : tech.slug === "html5" ? "HTML5"
-    : tech.slug === "css3" ? "CSS3"
-    : tech.slug === "cursorai" ? "Cursor AI"
-    : tech.slug.replace(/([A-Z])/g, ' $1').trim();
+const coreTechnologyGroups = [
+  {
+    title: 'Frontend Development',
+    accent: 'from-blue-500 to-cyan-400',
+    skills: [
+      { name: 'React.js', experience: '3+ years', level: 'Expert', progress: 96, icon: SiReact, color: 'text-[#61DAFB]' },
+      { name: 'Next.js', experience: '2+ years', level: 'Advanced', progress: 88, icon: SiNextdotjs, color: 'text-foreground' },
+      { name: 'TypeScript', experience: '2+ years', level: 'Advanced', progress: 82, icon: SiTypescript, color: 'text-[#3178C6]' },
+      { name: 'Tailwind CSS', experience: '3+ years', level: 'Expert', progress: 95, icon: SiTailwindcss, color: 'text-[#06B6D4]' },
+      { name: 'JavaScript', experience: '4+ years', level: 'Expert', progress: 96, icon: SiJavascript, color: 'text-[#F7DF1E]' },
+    ],
+  },
+  {
+    title: 'Backend & Databases',
+    accent: 'from-slate-500 to-indigo-400',
+    skills: [
+      { name: 'Node.js', experience: '2+ years', level: 'Intermediate', progress: 70, icon: SiNodedotjs, color: 'text-[#339933]' },
+      { name: 'Express.js', experience: '2+ years', level: 'Advanced', progress: 85, icon: SiExpress, color: 'text-foreground' },
+      { name: 'MongoDB', experience: '2+ years', level: 'Intermediate', progress: 72, icon: SiMongodb, color: 'text-[#47A248]' },
+      { name: 'PostgreSQL', experience: '2+ years', level: 'Intermediate', progress: 60, icon: SiPostgresql, color: 'text-[#4169E1]' },
+      { name: 'Supabase', experience: '1 year', level: 'Beginner', progress: 42, icon: SiSupabase, color: 'text-foreground' },
+      { name: 'MySQL', experience: '2+ years', level: 'Advanced', progress: 78, icon: SiMysql, color: 'text-[#4479A1]' },
+      { name: 'Python', experience: '2+ years', level: 'Intermediate', progress: 74, icon: SiPython, color: 'text-[#3776AB]' },
+    ],
+  },
+  {
+    title: 'Tools & Design',
+    accent: 'from-orange-500 to-yellow-400',
+    skills: [
+      { name: 'Git & GitHub', experience: '4+ years', level: 'Advanced', progress: 92, icon: SiGithub, color: 'text-foreground' },
+      { name: 'Figma', experience: '2+ years', level: 'Intermediate', progress: 74, icon: SiFigma, color: 'text-[#F24E1E]' },
+      { name: 'Canva', experience: '3+ years', level: 'Expert', progress: 90, icon: SiCanva, color: 'text-[#00C4CC]' },
+      { name: 'Cursor AI', experience: '1+ year', level: 'Advanced', progress: 85, icon: CursorIcon, color: '' },
+      { name: 'Vite', experience: '1+ years', level: 'Advanced', progress: 86, icon: SiVite, color: 'text-[#646CFF]' },
+      { name: 'Responsive Design', experience: '3+ years', level: 'Expert', progress: 95, icon: Smartphone, color: 'text-slate-500' },
+    ],
+  },
+];
 
-  return (
-    <a
-      href={tech.url}
-      target="_blank"
-      rel="noreferrer"
-      aria-label={`Open ${displayName} documentation in a new tab`}
-      className="group flex w-full max-w-[330px] items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white/80 px-4 py-3 shadow-sm shadow-neutral-200/60 backdrop-blur-sm transition-all hover:border-blue-500/60 hover:shadow-[0_14px_40px_rgba(37,99,235,0.18)] hover:-translate-y-1 active:translate-y-0 dark:border-neutral-700/70 dark:bg-neutral-900/80 dark:shadow-neutral-900/60"
-    >
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 ring-2 ring-blue-500/0 group-hover:ring-blue-500/30 transition-colors">
-        <img 
-          src={tech.logo} 
-          alt={displayName}
-          className="h-8 w-8 object-contain"
-        />
-      </div>
-      <div className="flex min-w-0 flex-col">
-        <span className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
-          {displayName}
-        </span>
-        <span className="text-[11px] font-medium tracking-wide text-blue-600 dark:text-blue-400">
-          {category}
-        </span>
-      </div>
-    </a>
-  );
+const levelStyles = {
+  Expert: 'border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  Advanced: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+  Intermediate: 'border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400',
 };
 
 const AboutPage = () => {
@@ -87,11 +99,6 @@ const AboutPage = () => {
       : `https://cdn.simpleicons.org/${item.slug}`
   );
 
-  const techLogos = techStack.map((tech, i) => ({
-    ...tech,
-    logo: images[i]
-  }));
-
   const fadeInVariant = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
@@ -110,7 +117,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div id="about" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
+    <div id="about" className="bg-background text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -119,14 +126,14 @@ const AboutPage = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInVariant}
-          className="mb-12"
+          className="mb-16"
         >
-          <h2 className="text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">About Me</h2>
+          <h2 className="text-center text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 uppercase">About Me</h2>
           <motion.div 
             initial={{ width: 0 }}
-            whileInView={{ width: "200px" }}
+            whileInView={{ width: "100px" }}
             transition={{ duration: 1, delay: 0.5 }}
-            className="h-px bg-linear-to-r from-transparent via-blue-500 to-transparent mx-auto"
+            className="h-1 bg-brand mx-auto rounded-full"
           ></motion.div>
         </motion.div>
 
@@ -136,39 +143,39 @@ const AboutPage = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
-          className="space-y-6 text-lg leading-relaxed"
+          className="space-y-6 text-lg leading-relaxed mb-20"
         >
-          <motion.p variants={fadeInVariant} className='text-gray-700 dark:text-gray-300'>
-            I am a self-motivated <span className="text-slate-800 dark:text-white font-medium underline underline-offset-4 decoration-blue-500/30">Full-Stack Developer</span> dedicated 
+          <motion.p variants={fadeInVariant} className='text-muted-foreground'>
+            I am a self-motivated <span className="text-foreground font-semibold underline underline-offset-4 decoration-brand/30">Full-Stack Developer</span> dedicated 
             to the craft of building seamless, high-performance web applications. My approach to engineering 
             is driven by a core principle: I focus on writing clean, maintainable and readable code that makes 
             building and improving products feel smooth and enjoyable.
           </motion.p>
 
-          <motion.p variants={fadeInVariant} className='text-gray-700 dark:text-gray-300'>
+          <motion.p variants={fadeInVariant} className='text-muted-foreground'>
             I believe that great software is defined by the balance between a polished user experience and a 
             robust, scalable architecture. My technical journey is centered on mastering the modern web 
-            stack, leveraging tools like <span className="text-slate-800 dark:text-white font-medium">React.js, Tailwind CSS, Node.js, and Python</span> to 
+            stack, leveraging tools like <span className="text-foreground font-semibold">React.js, Tailwind CSS, Node.js, and Python</span> to 
             transform complex requirements into intuitive digital solutions.
           </motion.p>
         </motion.div>
 
         {/* Modern Tech Showcase Section */}
-        <div className="mt-12 space-y-1 flex flex-col">
+        <div className="space-y-8 flex flex-col">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="flex items-center gap-4 mb-2"
+            className="flex items-center gap-4"
           >
-             <h3 className="text-base font-bold tracking-[0.2em] text-gray-700 dark:text-gray-300 uppercase">
+              <h3 className="text-xs font-black tracking-[0.25em] text-muted-foreground uppercase">
                Core Technologies
             </h3>
             <motion.div 
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               transition={{ duration: 1 }}
-              className="h-px grow bg-linear-to-r from-gray-800 dark:from-gray-400 to-transparent origin-left"
+              className="h-px grow bg-linear-to-r from-border to-transparent origin-left"
             ></motion.div>
           </motion.div>
           
@@ -176,29 +183,59 @@ const AboutPage = () => {
             initial={{ opacity: 0, x: -20}}
             whileInView={{ opacity: 1, x: 0}}
             viewport={{ once: true}}
-            className='relative isolate flex items-center justify-center w-full h-[65vh] min-h-[350px] md:h-[75vh] lg:h-[80vh] xl:h-[85vh] -mt-10 mb-0'
+            className='relative isolate w-full mb-20'
           >
-            {/* Mobile: AnimatedList */}
-            <div className="md:hidden w-full overflow-hidden rounded-2xl border border-neutral-200/70 bg-linear-to-b from-slate-50 via-white to-slate-50/70 px-3 py-6 shadow-sm dark:border-white/5 dark:bg-linear-to-b dark:from-[oklch(0.18_0.028_261.692)] dark:via-[oklch(0.18_0.028_261.692)] dark:to-[oklch(0.18_0.028_261.692)]/80">
-              <p className="mb-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
-                Tools I use day to day
-              </p>
-              <div className="h-[340px]">
-                <AnimatedList
-                  stackGap={8}
-                  columnGap={80}
-                  scaleFactor={0}
-                  scrollDownDuration={12}
-                  formationDuration={1.1}
+            {/* Core technology cards - Responsive Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
+              {coreTechnologyGroups.map((group) => (
+                <motion.article
+                  key={group.title}
+                  whileHover={{ y: -8 }}
+                  className="relative group rounded-[2rem] border border-border/50 p-8 backdrop-blur-sm transition-all hover:border-brand/30 hover:bg-card/60 shadow-lg shadow-black/5 dark:shadow-none"
                 >
-                  {techLogos.map((tech, index) => (
-                    <TechNotification key={index} tech={tech} />
-                  ))}
-                </AnimatedList>
-              </div>
+                  <div className="mb-8 flex items-center gap-4">
+                    <div className={`h-10 w-1 rounded-full bg-linear-to-b ${group.accent} group-hover:scale-y-110 transition-transform`}></div>
+                    <h4 className="text-base font-bold uppercase text-foreground">{group.title}</h4>
+                  </div>
+
+                  <div className="space-y-6">
+                    {group.skills.map((skill) => {
+                      const Icon = skill.icon;
+                      return (
+                        <div key={skill.name} className="group/skill">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/50 dark:bg-muted/10 border border-border/50 group-hover/skill:border-brand/30 transition-colors">
+                                <Icon size={18} className={`${skill.color} transition-transform group-hover/skill:scale-110`} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold text-foreground">{skill.name}</p>
+                                <p className="text-[11px] font-medium text-muted-foreground">{skill.experience}</p>
+                              </div>
+                            </div>
+                            <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${levelStyles[skill.level]}`}>
+                              {skill.level}
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-muted/50 dark:bg-muted/10 overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              whileInView={{ width: `${skill.progress}%` }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                              className={`h-full rounded-full bg-linear-to-r ${group.accent}`}
+                            ></motion.div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.article>
+              ))}
             </div>
-            {/* Desktop: IconCloud */}
-            <div className="hidden md:block w-full h-full">
+
+            {/* Large-screen alternate view */}
+            <div className="hidden 2xl:block absolute inset-0 pointer-events-none opacity-0 2xl:opacity-100 2xl:pointer-events-auto">
               <IconCloud images={images} techData={techStack} />
             </div>
           </motion.div>

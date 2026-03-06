@@ -117,7 +117,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div id="about" className="bg-background text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
+    <div id="about" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}

@@ -160,8 +160,8 @@ const AboutPage = () => {
           </motion.p>
         </motion.div>
 
-        {/* Modern Tech Showcase Section */}
-        <div className="space-y-8 flex flex-col">
+        {/* Modern Tech Showcase Section - Hidden on TV screens */}
+        <div className="min-[1920px]:hidden space-y-8 flex flex-col">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -170,7 +170,7 @@ const AboutPage = () => {
           >
               <h3 className="text-xs font-black tracking-[0.25em] text-muted-foreground uppercase">
                Core Technologies
-            </h3>
+             </h3>
             <motion.div 
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
@@ -233,12 +233,12 @@ const AboutPage = () => {
                 </motion.article>
               ))}
             </div>
-
-            {/* Large-screen alternate view */}
-            <div className="hidden 2xl:block absolute inset-0 pointer-events-none opacity-0 2xl:opacity-100 2xl:pointer-events-auto">
-              <IconCloud images={images} techData={techStack} />
-            </div>
           </motion.div>
+        </div>
+
+        {/* IconCloud - Only visible on TV/large screens */}
+        <div className="hidden min-[1920px]:block relative w-full h-[600px]">
+          <IconCloud images={images} techData={techStack} />
         </div>
 
       </div>

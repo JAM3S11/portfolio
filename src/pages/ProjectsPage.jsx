@@ -86,7 +86,7 @@ const ProjectsPage = () => {
       tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
       github: "https://github.com/JAM3S11/regease-workflow.git",
       live: "https://wantach-worflow.vercel.app",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-03-12%20215140.png",
+      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-03-12%20215839.png",
       imageText: "WANTACH WORKFLOW ILLUSTRATION",
       imageSubtext: "An n8n-style automation workflow",
       accentColor: "text-emerald-400",

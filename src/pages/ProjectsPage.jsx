@@ -85,7 +85,7 @@ const ProjectsPage = () => {
       description: "An n8n-style automation workflow diagram built with Next.js 14, TypeScript, and Tailwind CSS. This project visualizes the end-to-end registration process for RegEase Kenya, including client intake, document validation, government portal integration and payment automation",
       tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
       github: "https://github.com/JAM3S11/regease-workflow.git",
-      live: "https://wantach-worflow.vercel.app",
+      live: "https://wantach-workflow.vercel.app",
       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-03-12%20215839.png",
       imageText: "WANTACH WORKFLOW ILLUSTRATION",
       imageSubtext: "An n8n-style automation workflow",

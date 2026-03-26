@@ -1,11 +1,33 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, X, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useTheme } from '../content/ThemeProvider';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Prevent scrolling when mobile nav is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Track scroll for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
     { name: 'About', path: '#about' },
@@ -14,100 +36,133 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-[#232f48] bg-white dark:bg-[oklch(0.13_0.028_261.692)] transition-all">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
+      scrolled 
+        ? 'border-gray-200 dark:border-white/20 bg-white/30 dark:bg-[#0d141f]/95 shadow-sm' 
+        : 'border-gray-100 dark:border-white/10 bg-white dark:bg-[#0d141f]/70'
+    } backdrop-blur-md`}>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Logo Section */}
-        <a href="#home" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-            <span className="text-sm font-mono font-bold text-white">{">_"}</span>
+        {/* Spacer for mobile to help with centering - hidden on desktop */}
+        <div className="w-10 md:hidden" />
+
+        {/* Logo - centered on mobile, left on desktop */}
+        <a href="#home" className="flex items-center gap-2 group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 rounded" aria-label="JDG Portfolio Home">
+          {/* Mobile: gradient icon with glow */}
+          <div className="flex md:hidden h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-xs group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
+            {"</>"}
           </div>
-          <span className="text-xl font-bold tracking-tight dark:text-white">JDG</span>
+          {/* Desktop: larger gradient icon with glow */}
+          <div className="hidden md:flex h-10 w-10 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-sm group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
+            {"</>"}
+          </div>
+          <span className="sm:inline text-lg font-bold tracking-tight dark:text-white">JDG</span>
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           {navLinks.map((link) => (
             <a 
               key={link.name} 
               href={link.path} 
-              className="text-sm font-medium text-gray-800 dark:text-white hover:text-blue-500 transition-colors"
+              className="px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               {link.name}
             </a>
           ))}
           
-          {/* Dark Mode Toggle */}
+          <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-2 lg:mx-3" />
+
           <button 
             onClick={toggleDarkMode}
-            className="ml-4 p-2 rounded-full hover:bg-gray-800/10 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-white"
-            aria-label="Toggle Dark Mode"
+            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
           <a 
             href="#contact" 
-            className="ml-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold transition-all hover:bg-blue-700 active:scale-95"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
-            Get in Touch
+            Contact
           </a>
         </nav>
 
-        {/* Mobile Controls */}
-        <div className="flex items-center gap-4 md:hidden">
-          <button onClick={toggleDarkMode} className="p-2 text-gray-400">
+        {/* Mobile Menu Button */}
+        <div className="w-10 md:hidden flex items-center justify-end gap-2 sm:gap-3">
+           <button 
+            onClick={toggleDarkMode}
+            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2 text-gray-500 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          <button onClick={() => setIsOpen(!isOpen)} className="text-gray-400 focus:outline-none">
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isOpen}
+            className="p-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Side Content (Mobile Drawer) */}
-      <div 
-        className={`fixed inset-y-0 right-0 z-50 w-72 transform bg-[#0d141f] p-8 transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        } border-l border-gray-800 shadow-2xl`}
-      >
-        <div className="flex justify-end mb-10">
-            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white">
-              <X size={28} />
-            </button>
-        </div>
-        
-        <nav className="flex flex-col gap-8">
-          {navLinks.map((link) => (
-            <a 
-              key={link.name} 
-              href={link.path} 
+      {/* Mobile Navigation Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setIsOpen(false)}
-              className="text-xl font-medium text-gray-300 transition-colors hover:text-blue-500"
-            >
-              {link.name}
-            </a>
-          ))}
-          
-          <div className="pt-4 border-t border-gray-800">
-            <a 
-              href="#contact"
-              onClick={() => setIsOpen(false)}
-              className="block w-full text-center rounded-lg bg-blue-600 py-4 font-bold text-white hover:bg-blue-700"
-            >
-              Get in Touch
-            </a>
-          </div>
-        </nav>
-      </div>
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden"
+              aria-hidden="true"
+            />
 
-      {/* Overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" 
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+            {/* Mobile Menu Panel */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2, type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed right-4 top-20 z-50 w-[calc(100%-2rem)] sm:w-1/2 max-w-sm rounded-2xl bg-white/95 dark:bg-[#0d141f]/95 border border-gray-200 dark:border-white/10 shadow-2xl backdrop-blur-xl md:hidden flex flex-col p-5"
+            >
+              <nav className="flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <a 
+                    key={link.name} 
+                    href={link.path} 
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-white/5 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    {link.name}
+                    <ArrowRight size={16} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                ))}
+                
+                <div className="my-3 border-t border-gray-100 dark:border-white/5" />
+                
+                <a 
+                  href="#contact"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  Get in Touch
+                </a>
+              </nav>
+              
+              <div className="mt-auto pt-4 text-center">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">© 2026 JDG</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

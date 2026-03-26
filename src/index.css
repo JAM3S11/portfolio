@@ -14,10 +14,10 @@ html {
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  *, ::after, ::before {
-    transition-property: background-color, border-color, color, fill, stroke;
+  html, *, ::after, ::before {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+    transition-duration: 300ms;
   }
 }
 

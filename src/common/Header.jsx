@@ -49,11 +49,11 @@ const Header = () => {
         {/* Logo - centered on mobile, left on desktop */}
         <a href="#home" className="flex items-center gap-2 group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 rounded" aria-label="JDG Portfolio Home">
           {/* Mobile: gradient icon with glow */}
-          <div className="flex md:hidden h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-xs group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
+          <div className="flex md:hidden h-8 w-8 items-center justify-center rounded bg-linear-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-xs group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
             {"</>"}
           </div>
           {/* Desktop: larger gradient icon with glow */}
-          <div className="hidden md:flex h-10 w-10 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-sm group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
+          <div className="hidden md:flex h-10 w-10 items-center justify-center rounded bg-linear-to-br from-blue-500 to-blue-700 text-white font-mono font-bold text-sm group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-200">
             {"</>"}
           </div>
           <span className="sm:inline text-lg font-bold tracking-tight dark:text-white">JDG</span>
@@ -71,7 +71,7 @@ const Header = () => {
             </a>
           ))}
           
-          <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-2 lg:mx-3" />
+          <div className="h-4 w-px bg-gray-200 dark:bg-white/10 mx-2 lg:mx-3" />
 
           <button 
             onClick={toggleDarkMode}

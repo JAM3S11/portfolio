@@ -13,7 +13,7 @@ import Footer from "./common/Footer";
 function App() {
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen scroll-smooth bg-[#0a0f16]">
+      <div className="flex flex-col min-h-screen scroll-smooth bg-gray-50 dark:bg-[#0a0f16]">
 
         <div className="relative z-10 flex flex-col min-h-screen">
           <Header />

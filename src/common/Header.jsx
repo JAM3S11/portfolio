@@ -7,6 +7,7 @@ const Header = () => {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Prevent scrolling when mobile nav is open
   useEffect(() => {
@@ -29,6 +30,14 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Track viewport width for mobile glassmorphism
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
   const navLinks = [
     { name: 'About', path: '#about' },
     { name: 'Experience', path: '#experience' },
@@ -36,11 +45,11 @@ const Header = () => {
   ];
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
-      scrolled 
-        ? 'border-gray-200 dark:border-white/20 bg-white/30 dark:bg-[#0d141f]/95 shadow-sm' 
-        : 'border-gray-100 dark:border-white/10 bg-white dark:bg-[#0d141f]/70'
-    } backdrop-blur-md`}>
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 rounded-2xl mx-4 mt-2 shadow-lg max-w-[calc(100%-2rem)] md:max-w-6xl md:mx-auto backdrop-blur-md ${
+      scrolled
+        ? 'border border-gray-200/50 dark:border-white/10 bg-white/80 dark:bg-[oklch(0.13_0.028_261.692)]/80' 
+        : 'bg-white dark:bg-[oklch(0.13_0.028_261.692)]'
+    }`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* Spacer for mobile to help with centering - hidden on desktop */}

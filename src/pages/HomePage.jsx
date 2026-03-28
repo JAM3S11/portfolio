@@ -68,7 +68,7 @@ const HomePage = () => {
           )} />
       </div>
       
-      <div className='relative z-10 flex flex-col items-center'>
+      <div className='relative z-10 flex flex-col items-center mt-2.5'>
         {/* Availability Badge */}
         <motion.div variants={itemVariants} className="mb-8 flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 transition-all hover:bg-blue-500/20">
           <span className="relative flex h-2 w-2">

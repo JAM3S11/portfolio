@@ -83,6 +83,8 @@ html {
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --header-bg: oklch(1 0 0);
+  --header-bg-scrolled: oklch(1 0 0 / 0.8);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
@@ -118,6 +120,8 @@ html {
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
+  --header-bg: oklch(0.13 0.028 261.692);
+  --header-bg-scrolled: oklch(0.13 0.028 261.692 / 0.8);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);

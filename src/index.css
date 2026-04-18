@@ -178,3 +178,59 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+.tech-marquee {
+  overflow: hidden;
+  width: 100%;
+}
+
+.tech-marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: tech-marquee-slide 28s linear infinite;
+}
+
+.tech-marquee:hover .tech-marquee-track {
+  animation-play-state: paused;
+}
+
+.tech-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  margin-right: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  background: color-mix(in oklab, var(--card) 70%, transparent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.tech-marquee-item:hover {
+  transform: translateY(-4px) scale(1.04);
+  border-color: color-mix(in oklab, var(--color-brand) 50%, var(--border));
+}
+
+@keyframes tech-marquee-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.625rem));
+  }
+}
+
+@media (max-width: 640px) {
+  .tech-marquee-item {
+    width: 78px;
+    height: 78px;
+    margin-right: 0.875rem;
+  }
+
+  .tech-marquee-track {
+    animation-duration: 22s;
+  }
+}

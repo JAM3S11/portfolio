@@ -16,6 +16,9 @@ const Logo = () => {
       <span className="sm:inline text-lg font-bold tracking-tight dark:text-white">
         JDG
       </span>
+      <span className="hidden sm:inline-block px-1.5 py-0.5 rounded border border-border bg-muted/50 font-mono text-[10px] text-muted-foreground ml-1">
+        v1.0
+      </span>
     </a>
   );
 };

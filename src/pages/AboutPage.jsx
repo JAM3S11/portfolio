@@ -2,103 +2,49 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   SiReact, SiJavascript, SiTypescript, SiTailwindcss, 
-  SiNodedotjs, SiPython, SiPostgresql, SiGit, 
+  SiNodedotjs, SiPython, SiPostgresql,
   SiGithub, SiFigma, SiVite, SiExpress, SiNextdotjs,
   SiMongodb, SiMysql, SiCanva,
-  SiSupabase
+  SiSupabase, SiDocker, SiPostman
 } from 'react-icons/si';
-import { Globe, Smartphone, Rocket } from 'lucide-react';
-import { IconCloud } from '@/components/ui/icon-cloud';
 
-const CursorIcon = ({ size }) => (
-  <img 
-    src="https://ik.imagekit.io/jimdanliveurl/cursorImg.jpg" 
-    alt="Cursor AI" 
-    style={{ width: size, height: size }}
-    className="object-contain"
-  />
-);
-
-const coreTechnologyGroups = [
-  {
-    title: 'Frontend Development',
-    accent: 'from-blue-500 to-cyan-400',
-    skills: [
-      { name: 'React.js', experience: '3+ years', level: 'Expert', progress: 96, icon: SiReact, color: 'text-[#61DAFB]' },
-      { name: 'Next.js', experience: '2+ years', level: 'Advanced', progress: 88, icon: SiNextdotjs, color: 'text-foreground' },
-      { name: 'TypeScript', experience: '2+ years', level: 'Advanced', progress: 82, icon: SiTypescript, color: 'text-[#3178C6]' },
-      { name: 'Tailwind CSS', experience: '3+ years', level: 'Expert', progress: 95, icon: SiTailwindcss, color: 'text-[#06B6D4]' },
-      { name: 'JavaScript', experience: '4+ years', level: 'Expert', progress: 96, icon: SiJavascript, color: 'text-[#F7DF1E]' },
-    ],
-  },
-  {
-    title: 'Backend & Databases',
-    accent: 'from-slate-500 to-indigo-400',
-    skills: [
-      { name: 'Node.js', experience: '2+ years', level: 'Intermediate', progress: 70, icon: SiNodedotjs, color: 'text-[#339933]' },
-      { name: 'Express.js', experience: '2+ years', level: 'Advanced', progress: 85, icon: SiExpress, color: 'text-foreground' },
-      { name: 'MongoDB', experience: '2+ years', level: 'Intermediate', progress: 72, icon: SiMongodb, color: 'text-[#47A248]' },
-      { name: 'PostgreSQL', experience: '2+ years', level: 'Intermediate', progress: 60, icon: SiPostgresql, color: 'text-[#4169E1]' },
-      { name: 'Supabase', experience: '1 year', level: 'Beginner', progress: 42, icon: SiSupabase, color: 'text-foreground' },
-      { name: 'MySQL', experience: '2+ years', level: 'Advanced', progress: 78, icon: SiMysql, color: 'text-[#4479A1]' },
-      { name: 'Python', experience: '2+ years', level: 'Intermediate', progress: 74, icon: SiPython, color: 'text-[#3776AB]' },
-    ],
-  },
-  {
-    title: 'Tools & Design',
-    accent: 'from-orange-500 to-yellow-400',
-    skills: [
-      { name: 'Git & GitHub', experience: '4+ years', level: 'Advanced', progress: 92, icon: SiGithub, color: 'text-foreground' },
-      { name: 'Figma', experience: '2+ years', level: 'Intermediate', progress: 74, icon: SiFigma, color: 'text-[#F24E1E]' },
-      { name: 'Canva', experience: '3+ years', level: 'Expert', progress: 90, icon: SiCanva, color: 'text-[#00C4CC]' },
-      { name: 'Cursor AI', experience: '1+ year', level: 'Advanced', progress: 85, icon: CursorIcon, color: '' },
-      { name: 'Vite', experience: '1+ years', level: 'Advanced', progress: 86, icon: SiVite, color: 'text-[#646CFF]' },
-      { name: 'Responsive Design', experience: '3+ years', level: 'Expert', progress: 95, icon: Smartphone, color: 'text-slate-500' },
-    ],
-  },
+const techMarqueeItems = [
+  { name: 'React.js', icon: SiReact, color: '#61DAFB' },
+  { name: 'Next.js', icon: SiNextdotjs, color: '#000000' },
+  { name: 'TypeScript', icon: SiTypescript, color: '#3178C6' },
+  { name: 'Tailwind CSS', icon: SiTailwindcss, color: '#06B6D4' },
+  { name: 'JavaScript', icon: SiJavascript, color: '#F7DF1E' },
+  { name: 'Node.js', icon: SiNodedotjs, color: '#339933' },
+  { name: 'Express.js', icon: SiExpress, color: '#000000' },
+  { name: 'MongoDB', icon: SiMongodb, color: '#47A248' },
+  { name: 'PostgreSQL', icon: SiPostgresql, color: '#4169E1' },
+  { name: 'Supabase', icon: SiSupabase, color: '#3ECF8E' },
+  { name: 'MySQL', icon: SiMysql, color: '#4479A1' },
+  { name: 'Python', icon: SiPython, color: '#3776AB' },
+  { name: 'GitHub', icon: SiGithub, color: '#181717' },
+  { name: 'Postman', icon: SiPostman, color: '#FF6C35' },
+  { name: 'Figma', icon: SiFigma, color: '#F24E1E' },
+  { name: 'Canva', icon: SiCanva, color: '#00C4CC' },
+  { name: 'Cursor AI', icon: SiVite, color: '#000000' },
+  { name: 'Vite', icon: SiVite, color: '#646CFF' },
+  { name: 'Docker', icon: SiDocker, color: '#2496ED' },
 ];
 
-const levelStyles = {
-  Expert: 'border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  Advanced: 'border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
-  Intermediate: 'border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400',
+const MarqueeItem = ({ item }) => {
+  const Icon = item.icon;
+  return (
+    <div className="relative group flex flex-col items-center justify-center mx-1 sm:mx-2 md:mx-3">
+      <span className="absolute -top-4 sm:-top-5 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold text-gray-600 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white dark:bg-[#1a1a2e] px-2 py-0.5 rounded-md shadow-md border border-gray-200 dark:border-gray-700 z-10">
+        {item.name}
+      </span>
+      <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 transition-all p-1.5 sm:p-2">
+        <Icon size={24} sm:size={26} md:size={30} style={{ color: item.color, fill: item.color }} />
+      </div>
+    </div>
+  );
 };
 
 const AboutPage = () => {
-  const techStack = [
-    { slug: "typescript", url: "https://www.typescriptlang.org/" },
-    { slug: "javascript", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
-    { slug: "nextdotjs", url: "https://nextjs.org/" },
-    { slug: "postman", url: "https://www.postman.com/" },
-    { slug: "cursorai", url: "https://cursor.com/" },
-    { slug: "java", url: "https://www.java.com/" },
-    { slug: "react", url: "https://react.dev/" },
-    { slug: "android", url: "https://developer.android.com/" },
-    { slug: "html5", url: "https://developer.mozilla.org/en-US/docs/Web/HTML" },
-    { slug: "css3", url: "https://developer.mozilla.org/en-US/docs/Web/CSS" },
-    { slug: "express", url: "https://expressjs.com/" },
-    { slug: "amazonaws", url: "https://aws.amazon.com/" },
-    { slug: "postgresql", url: "https://www.postgresql.org/" },
-    { slug: "firebase", url: "https://firebase.google.com/" },
-    { slug: "nginx", url: "https://www.nginx.com/" },
-    { slug: "vercel", url: "https://vercel.com/" },
-    { slug: "jest", url: "https://jestjs.io/" },
-    { slug: "docker", url: "https://www.docker.com/" },
-    { slug: "git", url: "https://git-scm.com/" },
-    { slug: "github", url: "https://github.com/" },
-    { slug: "gitlab", url: "https://about.gitlab.com/" },
-    { slug: "visualstudiocode", url: "https://code.visualstudio.com/" },
-    { slug: "androidstudio", url: "https://developer.android.com/studio" },
-    { slug: "canva", url: "https://www.canva.com/" },
-    { slug: "figma", url: "https://www.figma.com/" },
-  ];
-  
-  const images = techStack.map(item => 
-    item.slug === "cursorai" 
-      ? "https://mintlify.s3-us-west-1.amazonaws.com/cursor/logo/light.png"
-      : `https://cdn.simpleicons.org/${item.slug}`
-  );
-
   const fadeInVariant = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
@@ -117,7 +63,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div id="about" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
+    <section id="about" className="bg-background text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -160,17 +106,17 @@ const AboutPage = () => {
           </motion.p>
         </motion.div>
 
-        {/* Modern Tech Showcase Section - Hidden on TV screens */}
-        <div className="min-[1920px]:hidden space-y-8 flex flex-col">
+        {/* Core Technologies Marquee */}
+        <div className="mb-12 sm:mb-16 md:mb-20">
           <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex items-center gap-4"
+            className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-8"
           >
-              <h3 className="text-xs font-black tracking-[0.25em] text-muted-foreground uppercase">
-               Core Technologies
-             </h3>
+            <h3 className="text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.25em] text-muted-foreground uppercase">
+              Core Technologies
+            </h3>
             <motion.div 
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
@@ -178,71 +124,30 @@ const AboutPage = () => {
               className="h-px grow bg-linear-to-r from-border to-transparent origin-left"
             ></motion.div>
           </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, x: -20}}
-            whileInView={{ opacity: 1, x: 0}}
-            viewport={{ once: true}}
-            className='relative isolate w-full mb-20'
-          >
-            {/* Core technology cards - Responsive Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
-              {coreTechnologyGroups.map((group) => (
-                <motion.article
-                  key={group.title}
-                  whileHover={{ y: -8 }}
-                  className="relative group rounded-[2rem] border border-border/50 p-8 backdrop-blur-sm transition-all hover:border-brand/30 hover:bg-card/60 shadow-lg shadow-black/5 dark:shadow-none"
-                >
-                  <div className="mb-8 flex items-center gap-4">
-                    <div className={`h-10 w-1 rounded-full bg-linear-to-b ${group.accent} group-hover:scale-y-110 transition-transform`}></div>
-                    <h4 className="text-base font-bold uppercase text-foreground">{group.title}</h4>
-                  </div>
 
-                  <div className="space-y-6">
-                    {group.skills.map((skill) => {
-                      const Icon = skill.icon;
-                      return (
-                        <div key={skill.name} className="group/skill">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/50 dark:bg-muted/10 border border-border/50 group-hover/skill:border-brand/30 transition-colors">
-                                <Icon size={18} className={`${skill.color} transition-transform group-hover/skill:scale-110`} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-bold text-foreground">{skill.name}</p>
-                                <p className="text-[11px] font-medium text-muted-foreground">{skill.experience}</p>
-                              </div>
-                            </div>
-                            <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${levelStyles[skill.level]}`}>
-                              {skill.level}
-                            </span>
-                          </div>
-                          <div className="h-1.5 rounded-full bg-muted/50 dark:bg-muted/10 overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              whileInView={{ width: `${skill.progress}%` }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                              className={`h-full rounded-full bg-linear-to-r ${group.accent}`}
-                            ></motion.div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.article>
+          <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-background to-transparent"></div>
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-background to-transparent"></div>
+
+            <motion.div 
+              className="flex py-2 sm:py-4"
+              initial={{ x: 0 }}
+              animate={{ x: "-33.33%" }}
+              transition={{ 
+                duration: 19 * 0.4, 
+                repeat: Infinity, 
+                ease: "linear" 
+              }}
+            >
+              {[...techMarqueeItems, ...techMarqueeItems, ...techMarqueeItems].map((item, idx) => (
+                <MarqueeItem key={`${item.name}-${idx}`} item={item} />
               ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* IconCloud - Only visible on TV/large screens */}
-        <div className="hidden min-[1920px]:block relative w-full h-[600px]">
-          <IconCloud images={images} techData={techStack} />
+            </motion.div>
+          </div>
         </div>
 
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -47,7 +47,7 @@ const ExperiencePage = () => {
   };
 
   return (
-    <section id="experience" className="bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 py-20 transition-colors duration-300">
+    <section id="experience" className="bg-background text-foreground px-6 py-20 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Heading */}
@@ -57,14 +57,14 @@ const ExperiencePage = () => {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <h2 className="text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
+          <h2 className="text-center text-3xl md:text-4xl font-bold text-foreground mb-4 uppercase tracking-tight">
             Experience
           </h2>
           <motion.div 
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            transition={{ duration: 0.8 }}
-            className="w-45 h-px bg-linear-to-r from-transparent via-blue-500 to-transparent rounded-sm mx-auto"
+            initial={{ width: 0 }}
+            whileInView={{ width: "100px" }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="h-1 bg-brand mx-auto rounded-full"
           ></motion.div>
         </motion.div>
 

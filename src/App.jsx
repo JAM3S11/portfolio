@@ -13,31 +13,17 @@ import Footer from "./common/Footer";
 function App() {
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen scroll-smooth bg-gray-50 dark:bg-[#0a0f16]">
+      <div className="flex flex-col min-h-screen scroll-smooth">
 
-        <div className="relative z-10 flex flex-col min-h-screen">
+        <div className="relative z-10 flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
           <Header />
       
           <main className="grow">
-            <section id="home">
-              <HomePage />
-            </section>
-
-            <section id="about">
-              <AboutPage />
-            </section>
-
-            <section id="experience">
-              <ExperiencePage />
-            </section>
-
-            <section id="projects">
-              <ProjectsPage />
-            </section>
-
-            <section id="contacts">
-              <ContactPage />
-            </section>
+            <HomePage />
+            <AboutPage />
+            <ExperiencePage />
+            <ProjectsPage />
+            <ContactPage />
           </main>
 
           <Footer />

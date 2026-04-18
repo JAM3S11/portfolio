@@ -46,7 +46,7 @@ const ContactPage = () => {
     };
 
     return (
-        <div id='contact' className='bg-white dark:bg-[oklch(0.13_0.028_261.692)] text-gray-300 px-6 py-20 transition-colors duration-300 overflow-hidden'>
+        <section id='contact' className='bg-background text-foreground px-6 py-20 transition-colors duration-300 overflow-hidden'>
             <div className='max-w-4xl mx-auto'>
 
                 {/* Header section */}
@@ -56,14 +56,14 @@ const ContactPage = () => {
                     viewport={{ once: true }}
                     className='mb-16'
                 >
-                    <h3 className='text-center text-3xl md:text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-2'>
+                    <h3 className='text-center text-3xl md:text-4xl font-bold text-foreground uppercase tracking-tight mb-4'>
                         Get in touch
                     </h3>
                     <motion.div 
                         initial={{ width: 0 }}
-                        whileInView={{ width: "240px" }}
-                        transition={{ duration: 1 }}
-                        className='h-px mb-12 mx-auto bg-linear-to-r from-transparent via-blue-500 to-transparent'
+                        whileInView={{ width: "100px" }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className='h-1 bg-brand mx-auto rounded-full'
                     ></motion.div>
                 </motion.div>
 
@@ -209,7 +209,7 @@ const ContactPage = () => {
                     </motion.div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 };
 

@@ -45,7 +45,7 @@ const MobileNav = ({ isOpen, onClose }) => {
             exit="exit"
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 top-[72px] z-40 bg-black/10 backdrop-blur-[2px] md:hidden"
+            className="fixed inset-0 top-[64px] z-40 bg-black/10 backdrop-blur-[2px] md:hidden"
             aria-hidden="true"
           />
 
@@ -54,7 +54,7 @@ const MobileNav = ({ isOpen, onClose }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed right-4 top-[88px] z-50 w-[calc(100%-2rem)] sm:w-1/2 max-w-sm rounded-2xl bg-white/95 dark:bg-[#111b22]/95 border border-gray-200 dark:border-[#233948] shadow-2xl backdrop-blur-sm md:hidden flex flex-col p-5"
+            className="fixed right-0 top-[64px] z-50 w-full h-[calc(100vh-64px)] bg-background/95 border-l border-border shadow-2xl backdrop-blur-md md:hidden flex flex-col p-6"
           >
             <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (

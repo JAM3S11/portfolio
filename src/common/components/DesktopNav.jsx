@@ -1,5 +1,6 @@
 import React from 'react';
 import ThemeToggle from './ThemeToggle';
+import { Search } from 'lucide-react';
 
 const navLinks = [
   { name: 'About', path: '#about' },
@@ -15,21 +16,24 @@ const DesktopNav = () => {
           <a
             key={link.name}
             href={link.path}
-            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-[#1392ec] transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
           >
             {link.name}
+            <span className="absolute -bottom-[22px] left-0 w-full h-0.5 bg-brand scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
           </a>
         ))}
       </div>
 
       <div className="flex items-center gap-3 lg:gap-4">
+        <div className="h-4 w-px bg-border/60" />
+        
         <ThemeToggle />
 
         <a
           href="#contact"
-          className="flex items-center justify-center rounded-lg h-9 px-4 bg-[#1392ec] hover:bg-blue-600 transition-colors text-white text-sm font-bold tracking-wide shadow-sm hover:shadow-md active:scale-95"
+          className="flex items-center justify-center rounded-md h-9 px-4 bg-brand hover:bg-blue-600 transition-all text-white text-xs font-mono font-bold tracking-tight shadow-sm active:scale-95"
         >
-          Get in Touch
+          GET_IN_TOUCH
         </a>
       </div>
     </nav>

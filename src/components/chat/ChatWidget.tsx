@@ -21,7 +21,16 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
   const [messages, setMessages] = useState<{role: 'visitor' | 'bot'; content: string}[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isSupabase, setIsSupabase] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.pageYOffset > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     setIsSupabase(isSupabaseConfigured());
@@ -93,11 +102,11 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
   };
 
   const positionClasses = position === 'bottom-right' 
-    ? 'bottom-6 right-6' 
-    : 'bottom-6 left-6';
+    ? isScrolled ? 'bottom-24 right-6' : 'bottom-6 right-6'
+    : isScrolled ? 'bottom-24 left-6' : 'bottom-6 left-6';
 
   return (
-    <div className={`fixed ${positionClasses} right-4 left-4 sm:right-6 sm:left-auto z-50`}>
+    <div className={`fixed ${positionClasses} right-4 sm:right-6 z-[60] transition-all duration-300`}>
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (

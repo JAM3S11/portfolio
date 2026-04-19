@@ -7,7 +7,7 @@ A modern, responsive portfolio website showcasing my work as a Full-Stack Develo
 - **Modern UI/UX**: Clean, responsive design with smooth animations powered by Framer Motion
 - **Dark Mode**: Toggle between light and dark themes with persistent preference
 - **Smooth Navigation**: Single-page application with smooth scrolling between sections
-- **Contact Form**: Integrated contact form using Web3Forms API
+- **Contact Form**: Integrated contact form using Web3Forms API / Supabase
 - **Project Showcase**: Interactive project cards with live demos and GitHub links
 - **Experience Timeline**: Visual timeline displaying professional experience
 - **Responsive Design**: Fully responsive across all device sizes
@@ -25,6 +25,7 @@ A modern, responsive portfolio website showcasing my work as a Full-Stack Develo
 - **Headless UI** - Accessible UI components
 
 ### Backend & Tools
+- **Supabase** - Backend-as-a-Service for contact form storage
 - **Web3Forms** - Contact form API integration
 - **Environment Variables** - Secure configuration management
 
@@ -84,6 +85,8 @@ VITE_GITHUB_URL=your_github_url
 VITE_LINKEDIN_URL=your_linkedin_url
 VITE_WHATSAPP_URL=your_whatsapp_url
 VITE_WEB3FORMS_COM_KEY=your_web3forms_api_key
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 4. Start the development server:
@@ -140,6 +143,8 @@ Create a `.env` file with the following variables:
 - `VITE_LINKEDIN_URL` - Your LinkedIn profile URL
 - `VITE_WHATSAPP_URL` - Your WhatsApp contact URL
 - `VITE_WEB3FORMS_COM_KEY` - Your Web3Forms API key (get one at [web3forms.com](https://web3forms.com))
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anon key
 
 ## 📱 Responsive Design
 
@@ -171,6 +176,7 @@ The portfolio is fully responsive and optimized for:
 - [Framer Motion](https://www.framer.com/motion/) for smooth animations
 - [Lucide](https://lucide.dev/) for beautiful icons
 - [Web3Forms](https://web3forms.com/) for contact form handling
+- [Supabase](https://supabase.com/) for backend-as-a-service
 
 ---
 

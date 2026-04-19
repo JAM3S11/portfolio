@@ -27,3 +27,5 @@ dist-ssr
 /src/components/animate-ui/components/
 /src/components/ui/particles.jsx
 /src/components/ui/cloud-orbit.jsx
+
+SUPABASE_SETUP.md

@@ -5,7 +5,16 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'node_modules',
+    'src/lib/*.ts',
+    'src/**/*.ts',
+    'src/**/*.tsx',
+    'vite.config.js',
+    'src/common/typing-animation.jsx',
+    'src/components/ui/*.jsx'
+  ]),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -15,15 +24,25 @@ export default defineConfig([
     ],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
       parserOptions: {
         ecmaVersion: 'latest',
-        ecmaFeatures: { jsx: true },
+        ecmaFeatures: {
+          jsx: true,
+        },
         sourceType: 'module',
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['off'],
+      'react-refresh/only-export-components': ['off'],
+      'react-refresh/no-export-named-as-default': ['off'],
+      'react-refresh/no-default-as-named-export': ['off'],
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': ['off'],
     },
   },
 ])

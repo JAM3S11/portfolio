@@ -14,6 +14,14 @@ interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
 }
 
+const VISITOR_INTENTS = [
+  { label: '💼 Hiring / Job', value: 'hiring', keywords: ['hire', 'job', 'employment', 'freelance'] },
+  { label: '🛠️ Project Quote', value: 'quote', keywords: ['quote', 'project', 'cost', 'budget'] },
+  { label: '💻 Tech Inquiry', value: 'tech', keywords: ['tech', 'skills', 'how', 'what'] },
+  { label: '🤝 Partnership', value: 'partnership', keywords: ['partner', 'collab', 'team'] },
+  { label: '❓ General FAQ', value: 'faq', keywords: ['faq', 'question', 'info'] },
+];
+
 export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +30,7 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
   const [inputValue, setInputValue] = useState('');
   const [isSupabase, setIsSupabase] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,20 +63,44 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
 
   const startConversation = async () => {
     setIsLoading(true);
+    setSelectedIntent(null);
     
-    if (isSupabase) {
-      const conv = await createConversation();
-      if (conv) {
-        setConversationId(conv.id);
-        await addMessage(conv.id, 'bot', welcomeMessage);
-        setMessages([{ role: 'bot', content: welcomeMessage }]);
-      }
+    if (!isSupabase) {
+      setMessages([{ role: 'bot', content: welcomeMessage }]);
     } else {
-      // Fallback: local-only mode
       setMessages([{ role: 'bot', content: welcomeMessage }]);
     }
     
     setIsLoading(false);
+  };
+
+  const handleSelectIntent = async (intent: typeof VISITOR_INTENTS[0]) => {
+    setSelectedIntent(intent.value);
+    const userMessage = `I'm interested in: ${intent.label}`;
+    setMessages(prev => [...prev, { role: 'visitor', content: userMessage }]);
+    
+    const botResponse = generateResponse(userMessage);
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
+      setIsLoading(false);
+    }, 500);
+
+    // Save to Supabase with visitor intent
+    if (isSupabase) {
+      let convId = conversationId;
+      if (!convId) {
+        const conv = await createConversation(undefined, undefined, intent.value);
+        if (conv) {
+          convId = conv.id;
+          setConversationId(conv.id);
+        }
+      }
+      if (convId) {
+        await addMessage(convId, 'visitor', userMessage);
+        await addMessage(convId, 'bot', botResponse);
+      }
+    }
   };
 
   const handleSendMessage = async () => {
@@ -87,10 +120,20 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     setIsLoading(false);
 
-    // Save to Supabase if configured
-    if (isSupabase && conversationId) {
-      await addMessage(conversationId, 'visitor', userMessage);
-      await addMessage(conversationId, 'bot', botResponse);
+    // Save to Supabase - create conversation first if needed
+    if (isSupabase) {
+      let convId = conversationId;
+      if (!convId) {
+        const conv = await createConversation();
+        if (conv) {
+          convId = conv.id;
+          setConversationId(conv.id);
+        }
+      }
+      if (convId) {
+        await addMessage(convId, 'visitor', userMessage);
+        await addMessage(convId, 'bot', botResponse);
+      }
     }
   };
 
@@ -138,16 +181,34 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Bot size={32} className="text-blue-600" />
+              {/* Intent Selection - shown when no intent selected yet */}
+              {selectedIntent === null ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4">
+                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <Bot size={32} className="text-blue-600" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                      How can I help you today?
+                    </p>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    Start a conversation with our AI assistant
-                  </p>
+                  
+                  {/* Intent Selection */}
+                  <div className="grid grid-cols-1 gap-2">
+                    {VISITOR_INTENTS.map((intent) => (
+                      <button
+                        key={intent.value}
+                        onClick={() => handleSelectIntent(intent)}
+                        disabled={isLoading}
+                        className="p-3 text-left rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        {intent.label}
+                      </button>
+                    ))}
+                  </div>
+                  
                   {!isSupabase && (
-                    <p className="text-xs text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
+                    <p className="text-xs text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full text-center">
                       Demo Mode (offline)
                     </p>
                   )}

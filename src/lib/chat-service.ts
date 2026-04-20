@@ -12,6 +12,7 @@ export interface Conversation {
   visitor_name: string | null;
   visitor_email: string | null;
   visitor_ip: string | null;
+  visitor_intent: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -26,7 +27,7 @@ export interface Message {
 }
 
 // Create a new conversation
-export async function createConversation(visitorName?: string, visitorEmail?: string): Promise<Conversation | null> {
+export async function createConversation(visitorName?: string, visitorEmail?: string, visitorIntent?: string): Promise<Conversation | null> {
   if (!supabase) return null;
 
   const { data, error } = await supabase
@@ -34,7 +35,8 @@ export async function createConversation(visitorName?: string, visitorEmail?: st
     .insert({
       visitor_name: visitorName || 'Visitor',
       visitor_email: visitorEmail || null,
-      status: 'active'
+      status: 'active',
+      visitor_intent: visitorIntent || null
     })
     .select()
     .single();
@@ -106,6 +108,26 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 
   return data as Message[];
+}
+
+// Get all messages (for search)
+export async function getAllMessages(): Promise<(Message & { conversationId: string })[]> {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all messages:', error);
+    return [];
+  }
+
+  return data.map(m => ({
+    ...m,
+    conversationId: m.conversation_id
+  })) as (Message & { conversationId: string })[];
 }
 
 // Get latest message for each conversation (for admin list)
@@ -186,6 +208,24 @@ export function subscribeToNewConversations(callback: (conversation: Conversatio
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+// Update conversation visitor info
+export async function updateConversationInfo(
+  conversationId: string, 
+  visitorName?: string, 
+  visitorEmail?: string
+): Promise<void> {
+  if (!supabase) return;
+
+  const update: any = { updated_at: new Date().toISOString() };
+  if (visitorName) update.visitor_name = visitorName;
+  if (visitorEmail) update.visitor_email = visitorEmail;
+
+  await supabase
+    .from('conversations')
+    .update(update)
+    .eq('id', conversationId);
 }
 
 // Get admin settings

@@ -90,6 +90,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allMessages, setAllMessages] = useState<any[]>([]);
   const [searchAllQuery, setSearchAllQuery] = useState('');
+  const [activeSearch, setActiveSearch] = useState<'conversation' | 'message' | null>(null);
   // Mobile: 'list' | 'chat' | 'analytics'
   const [mobileTab, setMobileTab] = useState<'list' | 'chat' | 'analytics'>('list');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -110,14 +111,17 @@ export default function AdminDashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const filteredConversations = conversations.filter(item => {
-    if (!item.latestMessage) return false;
+  const filteredConversations = React.useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
     const q = searchQuery.toLowerCase();
-    return (
-      (item.conversation.visitor_name || 'anonymous').toLowerCase().includes(q) ||
-      (item.conversation.visitor_email || '').toLowerCase().includes(q)
-    );
-  });
+    return conversations.filter(item => {
+      if (!item.latestMessage) return false;
+      return (
+        (item.conversation.visitor_name || 'anonymous').toLowerCase().includes(q) ||
+        (item.conversation.visitor_email || '').toLowerCase().includes(q)
+      );
+    });
+  }, [searchQuery, conversations]);
 
   const searchResults = React.useMemo(() => {
     if (!searchAllQuery.trim()) return [];
@@ -169,9 +173,13 @@ export default function AdminDashboard() {
 
   const handleLogin = async () => {
     setIsLoading(true);
+    const defaultAdminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+    
     if (isSupabase) {
       const settings = await getAdminSettings();
-      if (settings?.admin_password === password) {
+      const validPassword = settings?.admin_password || defaultAdminPassword;
+      
+      if (password === validPassword) {
         setIsAuthorized(true);
         loadConversations();
         loadAllMessages();
@@ -278,7 +286,7 @@ export default function AdminDashboard() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder="Password (default: admin123)"
                 autoFocus
                 className={`w-full px-4 py-3 rounded-xl ${inputBg} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
               />
@@ -325,34 +333,64 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search conversations…"
-            className={`w-full pl-9 pr-3 py-2 rounded-xl text-sm ${inputBg} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
-          />
+        {/* Search Toggle Buttons */}
+        <div className="flex gap-1.5 mb-2">
+          <button
+            onClick={() => { setActiveSearch(activeSearch === 'conversation' ? null : 'conversation'); setSearchAllQuery(''); }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeSearch === 'conversation'
+                ? 'bg-blue-600 text-white'
+                : dk ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            <Search size={12} />
+            <span>Conversations</span>
+          </button>
+          <button
+            onClick={() => { setActiveSearch(activeSearch === 'message' ? null : 'message'); setSearchQuery(''); }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeSearch === 'message'
+                ? 'bg-blue-600 text-white'
+                : dk ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            <MessageSquare size={12} />
+            <span>Messages</span>
+          </button>
         </div>
 
-        {/* Search all messages - desktop only */}
-        <div className="relative mt-2 hidden lg:block">
-          <MessageSquare size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
-          <input
-            type="text"
-            value={searchAllQuery}
-            onChange={(e) => setSearchAllQuery(e.target.value)}
-            placeholder="Search message content…"
-            className={`w-full pl-9 pr-3 py-2 rounded-xl text-sm ${inputBg} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
-          />
-        </div>
+        {activeSearch === 'conversation' && (
+          <div className="relative">
+            <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations…"
+              autoFocus
+              className={`w-full pl-9 pr-3 py-2 rounded-xl text-sm ${inputBg} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
+            />
+          </div>
+        )}
+
+        {activeSearch === 'message' && (
+          <div className="relative">
+            <MessageSquare size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
+            <input
+              type="text"
+              value={searchAllQuery}
+              onChange={(e) => setSearchAllQuery(e.target.value)}
+              placeholder="Search message content…"
+              autoFocus
+              className={`w-full pl-9 pr-3 py-2 rounded-xl text-sm ${inputBg} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
+            />
+          </div>
+        )}
       </div>
 
       {/* List body */}
       <div className="flex-1 overflow-y-auto">
-        {searchAllQuery ? (
+        {activeSearch === 'message' && searchAllQuery ? (
           <div className="p-3 space-y-1">
             <p className={`text-xs px-2 py-1 ${textMuted}`}>Results for "{searchAllQuery}"</p>
             {searchResults.length === 0 ? (
@@ -371,7 +409,12 @@ export default function AdminDashboard() {
               </button>
             ))}
           </div>
-        ) : filteredConversations.length === 0 ? (
+        ) : activeSearch === 'conversation' && searchQuery && filteredConversations.length === 0 ? (
+          <div className={`py-16 text-center ${textMuted}`}>
+            <Search size={32} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No conversations found</p>
+          </div>
+        ) : !activeSearch && filteredConversations.length === 0 ? (
           <div className={`py-16 text-center ${textMuted}`}>
             <Inbox size={32} className="mx-auto mb-3 opacity-30" />
             <p className="text-sm">No conversations yet</p>

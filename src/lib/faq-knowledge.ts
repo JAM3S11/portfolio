@@ -1,5 +1,4 @@
-// Portfolio FAQ Knowledge Base for AI Chatbot
-// Rule-based keyword matching - no external API required!
+import { generateGeminiResponse, improveFAQResponse, isGeminiConfigured } from "./gemini-service";
 
 export interface FAQ {
   keywords: string[];
@@ -289,6 +288,42 @@ export const faqKnowledgeBase: FAQ[] = [
     getResponse: () => `I can build websites and web applications! From landing pages to full-stack apps. Check my Projects page for examples of my work including SOLEASE (ITSM) and Greatwall (Web3).`
   },
 
+  // DEVELOPER CAREER ADVICE
+  {
+    keywords: ['developer advice', 'starting tech', 'starting developer', 'new developer', 'begin developer', 'becoming developer', 'how to start coding', 'learn to code', 'learn programming'],
+    getResponse: () => `Great question! Here's my advice for starting in tech:\n\n1️⃣ Pick ONE language and master the basics first - JavaScript or Python are great choices\n2️⃣ Build projects, not just tutorials - real learning happens by making things\n3️⃣ Learn Git and GitHub early - version control is essential\n4️⃣ Join developer communities - Stack Overflow, Discord, Reddit\n5️⃣ Don't compare yourself to seniors - everyone started somewhere\n\nConsistency beats intensity. Code a little every day! Want specific advice on a particular area?`
+  },
+
+  // DATA ANALYST ADVICE
+  {
+    keywords: ['data analyst', 'data analysis', 'analyst career', 'become analyst', 'data science', 'data analytics'],
+    getResponse: () => `Data analytics is a fantastic career path! Here's my guide:\n\n📊 Core Skills:\n• Excel/Sheets - master pivot tables & formulas\n• SQL - essential for data extraction\n• Python or R - for analysis & visualization\n• Tableau/Power BI - for dashboards\n\n📈 Learning Path:\n1. Start with Excel, move to SQL\n2. Learn Python basics (pandas, numpy)\n3. Practice with real datasets (Kaggle has free datasets)\n4. Build a portfolio with 2-3 projects\n\n💡 Tip: Show your work with clear visualizations and stories. Good analysts tell compelling data stories! Interested in this path?`
+  },
+
+  // TECH CAREER GENERAL
+  {
+    keywords: ['tech career', 'career in tech', 'tech job', 'tech industry', 'working in tech', 'tech job advice'],
+    getResponse: () => `Tech careers are rewarding but require commitment. Here's my perspective:\n\n🚀 What's great about tech:\n• High demand & remote options\n• Continuous learning keeps it exciting\n• Good earning potential\n• Problem-solving daily\n\n⚠️ Challenges:\n• Technology changes fast - always learning\n• Can be sedentary\n• Imposter syndrome is real\n\n💡 My advice: Pick a specialization you enjoy, build skills consistently, and network. The tech community is welcoming to those who show initiative.`
+  },
+
+  // PROGRAMMING TIPS
+  {
+    keywords: ['programming tips', 'code tips', 'coding tips', 'better at coding', 'improve coding', 'write better code'],
+    getResponse: () => `Here are my top tips for writing better code:\n\n1️⃣ Read code before writing - understand the problem first\n2️⃣ Keep functions small - do one thing well\n3️⃣ Name variables clearly - future you will thank present you\n4️⃣ Comment WHY, not WHAT - code shows what, comments explain why\n5️⃣ Learn debugging - half of coding is fixing bugs\n6️⃣ Build incrementally - test as you go\n\n📚 Resources: FreeCodeCamp, The Odin Project, CS50 are great starting points. What's your current stack?`
+  },
+
+  // JOB INTERVIEW TECH
+  {
+    keywords: ['tech interview', 'coding interview', 'interview prep', 'job interview', 'interview tips', 'technical interview'],
+    getResponse: () => `Tech interviews can be tough but preparation is key:\n\n📋 Common Interview Types:\n• Technical coding challenges (LeetCode/HackerRank)\n• System design for seniors\n• Behavioral questions (STAR method)\n• Portfolio review\n\n💡 Preparation Tips:\n1. Practice 2-3 coding problems daily\n2. Review your portfolio projects deeply\n3. Prepare 3-5 STAR stories\n4. Research the company beforehand\n5. Prepare thoughtful questions for them\n\n🤝 Soft skills matter too - communicate your thinking process. Need help with a specific interview type?`
+  },
+
+  // FREELANCE ADVICE
+  {
+    keywords: ['freelance', 'freelancing', 'freelance developer', 'freelance advice', 'start freelancing'],
+    getResponse: () => `Freelancing has great perks but requires discipline:\n\n💰 Pros:\n• Flexibility & autonomy\n• Potentially higher earnings\n• Choose your projects\n\n⏰ Cons:\n• No paid leave\n• Must handle your own taxes & benefits\n• Marketing is also your job\n\n📋 Getting Started:\n1. Build 2-3 portfolio projects first\n2. Start on Upwork/Fiverr or direct outreach\n3. Set clear boundaries & rates\n4. Always get contracts signed\n5. Build relationships for referrals\n\n💡 Tip: Start part-time while employed, validate demand, then transition!`
+  },
+
   // NOT UNDERSTAND (fallback)
   {
     keywords: [],
@@ -296,7 +331,6 @@ export const faqKnowledgeBase: FAQ[] = [
   }
 ];
 
-// Find the best matching FAQ
 export function findBestMatch(userMessage: string): FAQ | null {
   const lowercaseMessage = userMessage.toLowerCase();
   
@@ -317,15 +351,39 @@ export function findBestMatch(userMessage: string): FAQ | null {
   return bestMatch;
 }
 
-// Generate response from matched FAQ
-export function generateResponse(userMessage: string, context?: FAQContext): string {
+export function buildFAQContextString(): string {
+  return faqKnowledgeBase
+    .filter(faq => faq.keywords.length > 0)
+    .map(faq => {
+      const keywords = faq.keywords.join(", ");
+      const response = faq.getResponse();
+      return `Q: ${keywords}\nA: ${response}`;
+    })
+    .join("\n\n");
+}
+
+export async function generateResponse(
+  userMessage: string,
+  context?: FAQContext
+): Promise<string> {
   const matchedFAQ = findBestMatch(userMessage);
   
-  if (matchedFAQ) {
-    return matchedFAQ.getResponse(undefined, context);
+  if (matchedFAQ && matchedFAQ.keywords.length > 0) {
+    const faqResponse = matchedFAQ.getResponse(undefined, context);
+    
+    if (isGeminiConfigured()) {
+      const improved = await improveFAQResponse(faqResponse, userMessage);
+      return improved;
+    }
+    
+    return faqResponse;
   }
   
-  // Fallback response
+  if (isGeminiConfigured()) {
+    const faqContext = buildFAQContextString();
+    return await generateGeminiResponse(userMessage, faqContext);
+  }
+  
   const fallbackFAQ = faqKnowledgeBase[faqKnowledgeBase.length - 1];
   return fallbackFAQ.getResponse();
 }

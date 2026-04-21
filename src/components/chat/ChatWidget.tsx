@@ -79,14 +79,12 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     const userMessage = `I'm interested in: ${intent.label}`;
     setMessages(prev => [...prev, { role: 'visitor', content: userMessage }]);
     
-    const botResponse = generateResponse(userMessage);
     setIsLoading(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
-      setIsLoading(false);
-    }, 500);
+    const botResponse = await generateResponse(userMessage);
+    
+    setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
+    setIsLoading(false);
 
-    // Save to Supabase with visitor intent
     if (isSupabase) {
       let convId = conversationId;
       if (!convId) {
@@ -110,17 +108,12 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     setInputValue('');
     setMessages(prev => [...prev, { role: 'visitor', content: userMessage }]);
 
-    // Generate bot response
-    const botResponse = generateResponse(userMessage);
-    
-    // Add delay to simulate thinking
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const botResponse = await generateResponse(userMessage);
     
     setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
     setIsLoading(false);
 
-    // Save to Supabase - create conversation first if needed
     if (isSupabase) {
       let convId = conversationId;
       if (!convId) {

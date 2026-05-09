@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Send, Lock, ChevronLeft,
-  User, Mail, Search, MoreVertical, CheckCheck,
+  User, Mail, Search, CheckCheck,
   Download, Zap, BarChart3, MessageSquare,
-  CheckCircle, Inbox
+  CheckCircle, Inbox, Trash2
 } from 'lucide-react';
 import {
   getLatestMessages,
   getMessages,
   getAllMessages,
   addMessage,
+  deleteConversation,
   getAdminSettings,
   isSupabaseConfigured,
   subscribeToNewConversations
@@ -40,6 +41,10 @@ const INTENT_LABELS: Record<string, string> = {
   tech: 'Tech Inquiry',
   partnership: 'Partnership',
   faq: 'General FAQ',
+  deep_frontend: '🎯 Frontend Deep Dive',
+  deep_backend: '⚙️ Backend Deep Dive',
+  deep_fullstack: '🔧 Fullstack Deep Dive',
+  deep_software: '🏗️ Software Deep Dive',
 };
 
 const INTENT_COLORS: Record<string, string> = {
@@ -48,6 +53,10 @@ const INTENT_COLORS: Record<string, string> = {
   tech: 'bg-violet-500/15 text-violet-500',
   partnership: 'bg-amber-500/15 text-amber-500',
   faq: 'bg-gray-500/15 text-gray-400',
+  deep_frontend: 'bg-purple-500/15 text-purple-400',
+  deep_backend: 'bg-cyan-500/15 text-cyan-400',
+  deep_fullstack: 'bg-pink-500/15 text-pink-400',
+  deep_software: 'bg-orange-500/15 text-orange-400',
 };
 
 const QUICK_REPLIES = [
@@ -193,12 +202,22 @@ export default function AdminDashboard() {
         { conversation: { id: 'demo-1', visitor_name: 'John Smith', visitor_email: 'john@example.com', visitor_intent: 'hiring', status: 'active', created_at: new Date(now).toISOString(), updated_at: new Date(now).toISOString() }, latestMessage: { content: 'Hi, I want to hire you for a project!', created_at: new Date(now).toISOString() } },
         { conversation: { id: 'demo-2', visitor_name: 'Sarah Johnson', visitor_email: 'sarah@company.com', visitor_intent: 'quote', status: 'active', created_at: new Date(now - 86400000).toISOString(), updated_at: new Date(now - 86400000).toISOString() }, latestMessage: { content: 'Can you check out my startup idea?', created_at: new Date(now - 86400000).toISOString() } },
         { conversation: { id: 'demo-3', visitor_name: 'Mike Chen', visitor_email: 'mike@tech.io', visitor_intent: 'tech', status: 'active', created_at: new Date(now - 172800000).toISOString(), updated_at: new Date(now - 172800000).toISOString() }, latestMessage: { content: 'Thanks for the quick response!', created_at: new Date(now - 172800000).toISOString() } },
+        { conversation: { id: 'demo-4', visitor_name: 'Alice Kim', visitor_email: 'alice@dev.co', visitor_intent: 'deep_frontend', status: 'active', created_at: new Date(now - 3600000).toISOString(), updated_at: new Date(now - 3600000).toISOString() }, latestMessage: { content: 'How does the Zustand store in SOLEASE handle cross-store communication?', created_at: new Date(now - 3600000).toISOString() } },
+        { conversation: { id: 'demo-5', visitor_name: 'David Ochieng', visitor_email: 'david@startup.ke', visitor_intent: 'deep_backend', status: 'active', created_at: new Date(now - 7200000).toISOString(), updated_at: new Date(now - 7200000).toISOString() }, latestMessage: { content: 'What drove the MongoDB to PostgreSQL migration in SOLEASE?', created_at: new Date(now - 7200000).toISOString() } },
       ]);
       setAllMessages([
         { content: 'Hi, I want to hire you!', role: 'visitor', created_at: new Date(now).toISOString(), conversationId: 'demo-1' },
         { content: 'Tell me more about the project.', role: 'bot', created_at: new Date(now).toISOString(), conversationId: 'demo-1' },
         { content: 'Check out my startup idea?', role: 'visitor', created_at: new Date(now - 86400000).toISOString(), conversationId: 'demo-2' },
         { content: 'Thanks for the quick response!', role: 'visitor', created_at: new Date(now - 172800000).toISOString(), conversationId: 'demo-3' },
+        { content: 'I want to explore: 🎯 Frontend Deep Dive', role: 'visitor', created_at: new Date(now - 3600000).toISOString(), conversationId: 'demo-4' },
+        { content: '🎯 Frontend Deep Dive activated! I can walk you through the frontend architecture...', role: 'bot', created_at: new Date(now - 3600000).toISOString(), conversationId: 'demo-4' },
+        { content: 'How does the Zustand store in SOLEASE handle cross-store communication?', role: 'visitor', created_at: new Date(now - 3600000).toISOString(), conversationId: 'demo-4' },
+        { content: 'Great question! SOLEASE uses 6 Zustand stores (auth, ticket, notification, ui, analytics, admin). Cross-store communication creates implicit dependencies — for example, authStore.updateProfile calls notificationStore.addNotification directly via zustand\'s vanilla API. This works but couples the stores. A cleaner approach would be using zustand\'s subscribe mechanism or a lightweight event bus.', role: 'bot', created_at: new Date(now - 3600000).toISOString(), conversationId: 'demo-4' },
+        { content: 'What about the Web3.js integration in Greatwall — how does the frontend interact with the smart contracts?', role: 'visitor', created_at: new Date(now - 3600000).toISOString(), conversationId: 'demo-4' },
+        { content: 'I want to explore: ⚙️ Backend Deep Dive', role: 'visitor', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
+        { content: '⚙️ Backend Deep Dive activated! Let\'s explore the backend systems...', role: 'bot', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
+        { content: 'What drove the MongoDB to PostgreSQL migration in SOLEASE?', role: 'visitor', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
       ]);
     }
     setIsLoading(false);
@@ -221,10 +240,17 @@ export default function AdminDashboard() {
       const msgs = await getMessages(convo.conversation.id);
       setMessages(msgs.map(m => ({ role: m.role as 'visitor' | 'bot', content: m.content, created_at: m.created_at })));
     } else {
-      setMessages([
-        { role: 'visitor', content: convo.latestMessage?.content || 'Hello!', created_at: convo.conversation.created_at },
-        { role: 'bot', content: 'Thanks for reaching out. How can I help?', created_at: convo.conversation.created_at },
-      ]);
+      const thread = allMessages
+        .filter(m => m.conversationId === convo.conversation.id)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        .map(m => ({ role: m.role as 'visitor' | 'bot', content: m.content, created_at: m.created_at }));
+      if (thread.length === 0) {
+        setMessages([
+          { role: 'visitor', content: convo.latestMessage?.content || 'Hello!', created_at: convo.conversation.created_at },
+        ]);
+      } else {
+        setMessages(thread);
+      }
     }
   };
 
@@ -240,6 +266,23 @@ export default function AdminDashboard() {
     if (!selectedConvo) return;
     setMessages(prev => [...prev, { role: 'bot', content: reply, created_at: new Date().toISOString() }]);
     if (isSupabase) await addMessage(selectedConvo.conversation.id, 'bot', reply);
+  };
+
+  const handleDeleteConversation = async (item: ConvoItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete conversation with ${item.conversation.visitor_name || 'Anonymous'}? All messages will be permanently removed.`)) return;
+
+    if (isSupabase) {
+      await deleteConversation(item.conversation.id);
+    }
+
+    setConversations(prev => prev.filter(c => c.conversation.id !== item.conversation.id));
+    setAllMessages(prev => prev.filter(m => m.conversationId !== item.conversation.id));
+    if (selectedConvo?.conversation.id === item.conversation.id) {
+      setSelectedConvo(null);
+      setMessages([]);
+      setMobileTab('list');
+    }
   };
 
   const exportToCSV = () => {
@@ -430,7 +473,7 @@ export default function AdminDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => loadMessages(item)}
-                  className={`w-full px-4 py-3.5 flex items-start gap-3 transition-colors text-left ${
+                  className={`w-full px-4 py-3.5 flex items-start gap-3 transition-colors text-left group ${
                     isActive
                       ? (dk ? 'bg-blue-600/10 border-r-2 border-blue-500' : 'bg-blue-50 border-r-2 border-blue-500')
                       : (dk ? 'hover:bg-gray-800/60' : 'hover:bg-gray-50')
@@ -463,6 +506,15 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </div>
+                  <button
+                    onClick={(e) => handleDeleteConversation(item, e)}
+                    className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
+                      dk ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'
+                    }`}
+                    title="Delete conversation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </motion.button>
               );
             })}
@@ -557,7 +609,7 @@ export default function AdminDashboard() {
             {Object.entries(INTENT_LABELS).map(([key, label]) => {
               const count = stats.intentCounts[key] || 0;
               const pct = stats.totalConversations > 0 ? Math.round((count / stats.totalConversations) * 100) : 0;
-              const barColors: Record<string, string> = { hiring: 'bg-emerald-500', quote: 'bg-blue-500', tech: 'bg-violet-500', partnership: 'bg-amber-500', faq: 'bg-gray-400' };
+              const barColors: Record<string, string> = { hiring: 'bg-emerald-500', quote: 'bg-blue-500', tech: 'bg-violet-500', partnership: 'bg-amber-500', faq: 'bg-gray-400', deep_frontend: 'bg-purple-500', deep_backend: 'bg-cyan-500', deep_fullstack: 'bg-pink-500', deep_software: 'bg-orange-500' };
               return (
                 <div key={key}>
                   <div className="flex justify-between mb-1">
@@ -575,6 +627,62 @@ export default function AdminDashboard() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* AI Assistant Enhancements — What's New */}
+        <div className={`${surface} rounded-2xl p-4 border ${border}`}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+            <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>AI Assistant Updates</p>
+          </div>
+          <div className="space-y-3">
+            <div className={`p-3 rounded-xl ${dk ? 'bg-purple-900/10 border border-purple-900/20' : 'bg-purple-50 border border-purple-100'}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm">🔬</span>
+                <p className={`text-sm font-semibold ${textPrimary}`}>Deep Dive Insights Mode</p>
+                <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500">New</span>
+              </div>
+              <p className={`text-xs ${textMuted} leading-relaxed`}>
+                Visitors can explore James's projects with deep technical analysis — like ChatGPT for his codebase.
+                <br /><span className="font-medium">4 focus areas:</span> Frontend, Backend, Fullstack, Software Engineering
+                <br /><span className="font-medium">7 projects</span> with architecture, design decisions, and trade-offs
+                <br />Free-form Q&A with AI-generated deep technical insights
+              </p>
+            </div>
+
+            <div className={`p-3 rounded-xl ${dk ? 'bg-blue-900/10 border border-blue-900/20' : 'bg-blue-50 border border-blue-100'}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm">📚</span>
+                <p className={`text-sm font-semibold ${textPrimary}`}>Enriched Project Knowledge</p>
+                <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500">New</span>
+              </div>
+              <p className={`text-xs ${textMuted} leading-relaxed`}>
+                All 7 projects now have deep technical data including architecture, design decisions, challenges, and role-specific interview focus areas extracted from the actual GitHub repos.
+              </p>
+            </div>
+
+            <div className={`p-3 rounded-xl ${dk ? 'bg-amber-900/10 border border-amber-900/20' : 'bg-amber-50 border border-amber-100'}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm">💬</span>
+                <p className={`text-sm font-semibold ${textPrimary}`}>Smarter FAQ Responses</p>
+                <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500">Updated</span>
+              </div>
+              <p className={`text-xs ${textMuted} leading-relaxed`}>
+                FAQ knowledge base expanded to cover all 7 projects. New entries for deep dive intent detection. Welcome message updated with deep dive mode option.
+              </p>
+            </div>
+
+            <div className={`p-3 rounded-xl ${dk ? 'bg-emerald-900/10 border border-emerald-900/20' : 'bg-emerald-50 border border-emerald-100'}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm">🤖</span>
+                <p className={`text-sm font-semibold ${textPrimary}`}>Gemini Prompt Engineering</p>
+                <span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-500">Updated</span>
+              </div>
+              <p className={`text-xs ${textMuted} leading-relaxed`}>
+                New specialized prompts for deep dive technical analysis. Includes focus-area-specific context, project architecture details, and trade-off evaluation. Fallback responses serve as backup when API is unavailable.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -620,9 +728,15 @@ export default function AdminDashboard() {
           <p className={`text-sm ${textMuted}`}>Select a conversation</p>
         )}
 
-        <button className={`ml-auto p-1.5 rounded-lg ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}>
-          <MoreVertical size={16} className={textMuted} />
-        </button>
+        {selectedConvo && (
+          <button
+            onClick={(e) => handleDeleteConversation(selectedConvo, e)}
+            className={`p-1.5 rounded-lg ${dk ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'} transition-colors`}
+            title="Delete conversation"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
 
       {selectedConvo ? (

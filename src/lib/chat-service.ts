@@ -245,6 +245,33 @@ export async function getAdminSettings(): Promise<{admin_password: string, email
   return data;
 }
 
+// Delete a conversation and all its messages
+export async function deleteConversation(conversationId: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  const { error: msgError } = await supabase
+    .from('messages')
+    .delete()
+    .eq('conversation_id', conversationId);
+
+  if (msgError) {
+    console.error('Error deleting messages:', msgError);
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('conversations')
+    .delete()
+    .eq('id', conversationId);
+
+  if (error) {
+    console.error('Error deleting conversation:', error);
+    return false;
+  }
+
+  return true;
+}
+
 // Check if Supabase is configured
 export function isSupabaseConfigured(): boolean {
   return !!(supabaseUrl && supabaseAnonKey);

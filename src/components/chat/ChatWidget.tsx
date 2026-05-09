@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   createConversation, 
   addMessage, 
-  getMessages, 
   subscribeToMessages,
   isSupabaseConfigured 
 } from '@/lib/chat-service';
-import { generateResponse, welcomeMessage, Conversation, Message } from '@/lib/faq-knowledge';
+import { generateResponse, generateDeepDiveResponse, welcomeMessage } from '@/lib/faq-knowledge';
 
 interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
@@ -22,6 +21,13 @@ const VISITOR_INTENTS = [
   { label: '❓ General FAQ', value: 'faq', keywords: ['faq', 'question', 'info'] },
 ];
 
+const DEEP_DIVE_INTENTS = [
+  { label: '🎯 Frontend Deep Dive', value: 'deep_frontend', focus: 'frontend' },
+  { label: '⚙️ Backend Deep Dive', value: 'deep_backend', focus: 'backend' },
+  { label: '🔧 Fullstack Deep Dive', value: 'deep_fullstack', focus: 'fullstack' },
+  { label: '🏗️ Software Deep Dive', value: 'deep_software', focus: 'software' },
+];
+
 export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +38,15 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
   const [isScrolled, setIsScrolled] = useState(false);
   const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationIdRef = useRef<string | null>(null);
+  const selectedIntentRef = useRef<string | null>(null);
+
+  const [deepDiveFocus, setDeepDiveFocus] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+
+  // Keep refs in sync with state so async callbacks always read latest value
+  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
+  useEffect(() => { selectedIntentRef.current = selectedIntent; }, [selectedIntent]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,56 +64,132 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Subscribe to new messages from other sessions only
   useEffect(() => {
     if (!conversationId || !isSupabase) return;
-
-    const unsubscribe = subscribeToMessages(conversationId, (newMessage: Message) => {
-      // Skip adding - we're already handling messages locally
-      // This subscription is just for real-time sync if needed
-    });
-
+    const unsubscribe = subscribeToMessages(conversationId, () => {});
     return () => unsubscribe();
   }, [conversationId, isSupabase]);
+
+  const addBotMessage = useCallback((content: string) => {
+    setMessages(prev => [...prev, { role: 'bot', content }]);
+  }, []);
+
+  const addVisitorMessage = useCallback((content: string) => {
+    setMessages(prev => [...prev, { role: 'visitor', content }]);
+  }, []);
+
+  const persistMessage = useCallback(async (role: 'visitor' | 'bot', content: string) => {
+    if (!isSupabase) return;
+    let convId = conversationIdRef.current;
+    if (!convId) {
+      const intent = selectedIntentRef.current || 'deep_frontend';
+      const conv = await createConversation(undefined, undefined, intent);
+      if (conv) {
+        convId = conv.id;
+        conversationIdRef.current = conv.id;
+        setConversationId(conv.id);
+      }
+    }
+    if (convId) {
+      await addMessage(convId, role, content);
+    }
+  }, [isSupabase]);
+
+  const resetDeepDive = useCallback(() => {
+    setDeepDiveFocus(null);
+    setSubLoading(false);
+  }, []);
 
   const startConversation = async () => {
     setIsLoading(true);
     setSelectedIntent(null);
-    
-    if (!isSupabase) {
-      setMessages([{ role: 'bot', content: welcomeMessage }]);
-    } else {
-      setMessages([{ role: 'bot', content: welcomeMessage }]);
-    }
-    
+    resetDeepDive();
+    setMessages([{ role: 'bot', content: welcomeMessage }]);
     setIsLoading(false);
   };
 
   const handleSelectIntent = async (intent: typeof VISITOR_INTENTS[0]) => {
     setSelectedIntent(intent.value);
     const userMessage = `I'm interested in: ${intent.label}`;
-    setMessages(prev => [...prev, { role: 'visitor', content: userMessage }]);
-    
+    addVisitorMessage(userMessage);
+    await persistMessage('visitor', userMessage);
     setIsLoading(true);
     const botResponse = await generateResponse(userMessage);
-    
-    setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
+    addBotMessage(botResponse);
+    await persistMessage('bot', botResponse);
     setIsLoading(false);
+  };
 
-    if (isSupabase) {
-      let convId = conversationId;
-      if (!convId) {
-        const conv = await createConversation(undefined, undefined, intent.value);
-        if (conv) {
-          convId = conv.id;
-          setConversationId(conv.id);
-        }
-      }
-      if (convId) {
-        await addMessage(convId, 'visitor', userMessage);
-        await addMessage(convId, 'bot', botResponse);
-      }
-    }
+  const handleDeepDiveSelect = async (intent: typeof DEEP_DIVE_INTENTS[0]) => {
+    setSelectedIntent(intent.value);
+    setDeepDiveFocus(intent.focus);
+    setSubLoading(true);
+
+    const msg = `I want to explore: ${intent.label}`;
+    addVisitorMessage(msg);
+    await persistMessage('visitor', msg);
+
+    const welcomeMap: Record<string, string> = {
+      frontend: `🎯 **Frontend Deep Dive** activated!
+
+I can walk you through the frontend architecture across all of James's projects — from SOLEASE's Zustand state management to Greatwall's Web3 integration layer.
+
+**Ask me about:**
+• Component architecture and patterns used in each project
+• State management decisions (Zustand vs Redux vs local state)
+• Styling approaches (Tailwind, DaisyUI, shadcn/ui)
+• Performance optimization and bundle strategies
+• Accessibility patterns and trade-offs
+
+What frontend topic would you like to explore?`,
+      backend: `⚙️ **Backend Deep Dive** activated!
+
+Let's explore the backend systems powering James's projects — from Express 5 APIs to database migrations and auth strategies.
+
+**Ask me about:**
+• API design patterns (REST, middleware chains, error handling)
+• Database schema decisions (PostgreSQL, Prisma ORM, MongoDB migrations)
+• Authentication & authorization (JWT, OAuth, role-based access)
+• Security considerations (rate limiting, CSRF, XSS prevention)
+• Scalability approaches and caching strategies
+
+What backend topic interests you?`,
+      fullstack: `🔧 **Fullstack Deep Dive** activated!
+
+Let's trace the full data flow through James's projects — from UI components all the way to the database and back.
+
+**Ask me about:**
+• End-to-end architecture (monorepo structure, frontend-backend communication)
+• Data flow patterns (state management → API calls → persistence)
+• DevOps and deployment strategies
+• Full-stack security considerations
+• Scaling full-stack applications
+
+What fullstack aspect would you like to dive into?`,
+      software: `🏗️ **Software Engineering Deep Dive** activated!
+
+Let's analyze the engineering practices across James's portfolio — from system design to code quality and testing strategies.
+
+**Ask me about:**
+• System design decisions and architectural trade-offs
+• Testing strategies and code quality patterns
+• Technical debt identification and refactoring priorities
+• Project planning and scalability considerations
+• Code organization and design patterns
+
+What software engineering topic would you like to discuss?`,
+    };
+
+    const welcomeMsg = welcomeMap[intent.focus] || `Deep Dive mode activated for ${intent.label}! Ask me anything about the technical details.`;
+    addBotMessage(welcomeMsg);
+    await persistMessage('bot', welcomeMsg);
+    setSubLoading(false);
+  };
+
+  const handleBackToNormal = () => {
+    resetDeepDive();
+    setSelectedIntent(null);
+    setMessages([{ role: 'bot', content: welcomeMessage }]);
   };
 
   const handleSendMessage = async () => {
@@ -106,28 +197,21 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
 
     const userMessage = inputValue.trim();
     setInputValue('');
-    setMessages(prev => [...prev, { role: 'visitor', content: userMessage }]);
 
+    addVisitorMessage(userMessage);
+    await persistMessage('visitor', userMessage);
     setIsLoading(true);
-    const botResponse = await generateResponse(userMessage);
-    
-    setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
-    setIsLoading(false);
 
-    if (isSupabase) {
-      let convId = conversationId;
-      if (!convId) {
-        const conv = await createConversation();
-        if (conv) {
-          convId = conv.id;
-          setConversationId(conv.id);
-        }
-      }
-      if (convId) {
-        await addMessage(convId, 'visitor', userMessage);
-        await addMessage(convId, 'bot', botResponse);
-      }
+    let botResponse: string;
+    if (deepDiveFocus) {
+      botResponse = await generateDeepDiveResponse(userMessage, deepDiveFocus);
+    } else {
+      botResponse = await generateResponse(userMessage);
     }
+
+    addBotMessage(botResponse);
+    await persistMessage('bot', botResponse);
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -141,9 +225,10 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     ? isScrolled ? 'bottom-24 right-6' : 'bottom-6 right-6'
     : isScrolled ? 'bottom-24 left-6' : 'bottom-6 left-6';
 
+  const isInterviewLoading = subLoading;
+
   return (
     <div className={`fixed ${positionClasses} right-4 sm:right-6 z-[60] transition-all duration-300`}>
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -160,8 +245,16 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                   <Bot size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold">AI Assistant</h3>
-                  <p className="text-xs text-white/80">Ask me anything!</p>
+                  <h3 className="font-bold">
+                    {deepDiveFocus
+                      ? `🔬 ${deepDiveFocus.charAt(0).toUpperCase() + deepDiveFocus.slice(1)} Deep Dive`
+                      : 'AI Assistant'}
+                  </h3>
+                  <p className="text-xs text-white/80">
+                    {deepDiveFocus
+                      ? 'Deep Dive Mode'
+                      : 'Ask me anything!'}
+                  </p>
                 </div>
               </div>
               <button 
@@ -174,8 +267,7 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Intent Selection - shown when no intent selected yet */}
-              {selectedIntent === null ? (
+              {selectedIntent === null && !deepDiveFocus ? (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4">
                     <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -186,14 +278,30 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                     </p>
                   </div>
                   
-                  {/* Intent Selection */}
+                  {/* Standard Intents */}
                   <div className="grid grid-cols-1 gap-2">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1 uppercase tracking-wider">Quick Actions</p>
                     {VISITOR_INTENTS.map((intent) => (
                       <button
                         key={intent.value}
                         onClick={() => handleSelectIntent(intent)}
                         disabled={isLoading}
                         className="p-3 text-left rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        {intent.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Deep Dive Intents */}
+                  <div className="grid grid-cols-1 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-purple-500 dark:text-purple-400 font-medium px-1 uppercase tracking-wider">🔬 Deep Dive Insights</p>
+                    {DEEP_DIVE_INTENTS.map((intent) => (
+                      <button
+                        key={intent.value}
+                        onClick={() => handleDeepDiveSelect(intent)}
+                        disabled={isLoading}
+                        className="p-3 text-left rounded-lg bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors text-sm border border-purple-200 dark:border-purple-800"
                       >
                         {intent.label}
                       </button>
@@ -238,7 +346,7 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                 ))
               )}
               
-              {isLoading && (
+              {(isLoading || isInterviewLoading) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -266,12 +374,13 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder={deepDiveFocus ? 'Ask about project internals...' : 'Type a message...'}
+                  disabled={isLoading || isInterviewLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-40"
                 />
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isLoading}
+                  disabled={!inputValue.trim() || isLoading || isInterviewLoading}
                   className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Send size={18} />

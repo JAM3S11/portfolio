@@ -203,12 +203,12 @@ npm install
 ```env
 VITE_GITHUB_URL=https://github.com/JAM3S11
 VITE_LINKEDIN_URL=https://www.linkedin.com/in/james-daniel-jr/
-VITE_WHATSAPP_URL=https://wa.me/+254716041419
+VITE_WHATSAPP_URL=https://wa.me/your-number
 VITE_WEB3FORMS_COM_KEY=your_web3forms_api_key
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_GEMINI_API_KEY=your_gemini_api_key
-VITE_ADMIN_PASSWORD=admin123
+VITE_ADMIN_PASSWORD=your-secured-password
 ```
 
 4. Start the development server:
@@ -313,7 +313,6 @@ The project is configured for **Vercel** deployment with SPA rewrite rules in `v
 **James Daniel** — Full-Stack Engineer
 
 - Email: [jdndirangu2020@gmail.com](mailto:jdndirangu2020@gmail.com)
-- Phone: [+254 716 041419](tel:+254716041419)
 - GitHub: [@JAM3S11](https://github.com/JAM3S11)
 - LinkedIn: [James Daniel Jr.](https://www.linkedin.com/in/james-daniel-jr/)
 - Portfolio: [jamesdaniel.dev](https://jamesdaniel.dev)

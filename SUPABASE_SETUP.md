@@ -117,7 +117,7 @@ Replace with your actual values from Step 2.
 
 1. Go to **Project Settings** → **Members**
 2. Click "Invite Member"
-3. Enter: `example0@gmail.com`
+3. Enter: `example@gmail.com`
 4. Assign role: `Developer`
 
 ---

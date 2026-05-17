@@ -191,7 +191,7 @@ export function subscribeToNewConversations(callback: (conversation: Conversatio
   if (!supabase) return () => {};
 
   const channel = supabase
-    .channel('new-conversations')
+    .channel(`new-conversations-${crypto.randomUUID?.() || Math.random()}`)
     .on(
       'postgres_changes',
       {
@@ -246,23 +246,13 @@ export async function getAdminSettings(): Promise<{admin_password: string, email
 }
 
 // Delete a conversation and all its messages
+// Uses SECURITY DEFINER RPC to bypass RLS
 export async function deleteConversation(conversationId: string): Promise<boolean> {
   if (!supabase) return false;
 
-  const { error: msgError } = await supabase
-    .from('messages')
-    .delete()
-    .eq('conversation_id', conversationId);
-
-  if (msgError) {
-    console.error('Error deleting messages:', msgError);
-    return false;
-  }
-
-  const { error } = await supabase
-    .from('conversations')
-    .delete()
-    .eq('id', conversationId);
+  const { error } = await supabase.rpc('delete_conversation', {
+    conversation_id: conversationId,
+  });
 
   if (error) {
     console.error('Error deleting conversation:', error);

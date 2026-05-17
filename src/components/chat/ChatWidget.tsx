@@ -7,7 +7,9 @@ import {
   subscribeToMessages,
   isSupabaseConfigured 
 } from '@/lib/chat-service';
-import { generateResponse, generateDeepDiveResponse, welcomeMessage } from '@/lib/faq-knowledge';
+import { generateResponseWithMetrics, generateDeepDiveResponseWithMetrics, welcomeMessage } from '@/lib/faq-knowledge';
+import { logAIInteraction, logAIError } from '@/lib/analytics-service';
+import { evaluateInteraction, createNewConversationAlert } from '@/lib/alert-service';
 
 interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
@@ -78,8 +80,8 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     setMessages(prev => [...prev, { role: 'visitor', content }]);
   }, []);
 
-  const persistMessage = useCallback(async (role: 'visitor' | 'bot', content: string) => {
-    if (!isSupabase) return;
+  const persistMessage = useCallback(async (role: 'visitor' | 'bot', content: string): Promise<{ convId: string; msgId: string } | null> => {
+    if (!isSupabase) return null;
     let convId = conversationIdRef.current;
     if (!convId) {
       const intent = selectedIntentRef.current || 'deep_frontend';
@@ -91,8 +93,12 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
       }
     }
     if (convId) {
-      await addMessage(convId, role, content);
+      const msg = await addMessage(convId, role, content);
+      if (msg) {
+        return { convId, msgId: msg.id };
+      }
     }
+    return null;
   }, [isSupabase]);
 
   const resetDeepDive = useCallback(() => {
@@ -112,11 +118,51 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     setSelectedIntent(intent.value);
     const userMessage = `I'm interested in: ${intent.label}`;
     addVisitorMessage(userMessage);
-    await persistMessage('visitor', userMessage);
     setIsLoading(true);
-    const botResponse = await generateResponse(userMessage);
-    addBotMessage(botResponse);
-    await persistMessage('bot', botResponse);
+    const metricResult = await generateResponseWithMetrics(userMessage);
+    addBotMessage(metricResult.text);
+    const visitorPersist = await persistMessage('visitor', userMessage);
+    const botPersist = await persistMessage('bot', metricResult.text);
+    if (visitorPersist && botPersist && metricResult.latency_ms > 0) {
+      logAIInteraction({
+        conversation_id: visitorPersist.convId,
+        message_id: botPersist.msgId,
+        prompt: userMessage,
+        response: metricResult.text,
+        model: metricResult.model,
+        prompt_tokens: metricResult.prompt_tokens,
+        completion_tokens: metricResult.completion_tokens,
+        total_tokens: metricResult.total_tokens,
+        latency_ms: metricResult.latency_ms,
+        confidence_score: metricResult.confidence,
+        intent_detected: intent.value,
+        processing_steps: null,
+      });
+      const alert = evaluateInteraction({
+        conversation_id: visitorPersist.convId,
+        message_id: botPersist.msgId,
+        prompt: userMessage,
+        response: metricResult.text,
+        model: metricResult.model,
+        prompt_tokens: metricResult.prompt_tokens,
+        completion_tokens: metricResult.completion_tokens,
+        total_tokens: metricResult.total_tokens,
+        latency_ms: metricResult.latency_ms,
+        confidence_score: metricResult.confidence,
+        intent_detected: intent.value,
+        processing_steps: null,
+      } as any);
+      if (alert) {
+        logAIError({
+          conversation_id: visitorPersist.convId,
+          error_type: `alert_${alert.rule_type}`,
+          error_message: alert.message,
+          failure_reason: `severity:${alert.severity}`,
+          resolution_attempted: null,
+          resolved: alert.acknowledged,
+        });
+      }
+    }
     setIsLoading(false);
   };
 
@@ -197,20 +243,61 @@ What software engineering topic would you like to discuss?`,
 
     const userMessage = inputValue.trim();
     setInputValue('');
-
     addVisitorMessage(userMessage);
-    await persistMessage('visitor', userMessage);
+    const visitorPersist = await persistMessage('visitor', userMessage);
     setIsLoading(true);
 
-    let botResponse: string;
+    let metricResult;
     if (deepDiveFocus) {
-      botResponse = await generateDeepDiveResponse(userMessage, deepDiveFocus);
+      metricResult = await generateDeepDiveResponseWithMetrics(userMessage, deepDiveFocus);
     } else {
-      botResponse = await generateResponse(userMessage);
+      metricResult = await generateResponseWithMetrics(userMessage);
     }
 
-    addBotMessage(botResponse);
-    await persistMessage('bot', botResponse);
+    addBotMessage(metricResult.text);
+    const botPersist = await persistMessage('bot', metricResult.text);
+
+    if (visitorPersist && botPersist && metricResult.latency_ms > 0) {
+      logAIInteraction({
+        conversation_id: visitorPersist.convId,
+        message_id: botPersist.msgId,
+        prompt: userMessage,
+        response: metricResult.text,
+        model: metricResult.model,
+        prompt_tokens: metricResult.prompt_tokens,
+        completion_tokens: metricResult.completion_tokens,
+        total_tokens: metricResult.total_tokens,
+        latency_ms: metricResult.latency_ms,
+        confidence_score: metricResult.confidence,
+        intent_detected: null,
+        processing_steps: null,
+      });
+      const alert = evaluateInteraction({
+        conversation_id: visitorPersist.convId,
+        message_id: botPersist.msgId,
+        prompt: userMessage,
+        response: metricResult.text,
+        model: metricResult.model,
+        prompt_tokens: metricResult.prompt_tokens,
+        completion_tokens: metricResult.completion_tokens,
+        total_tokens: metricResult.total_tokens,
+        latency_ms: metricResult.latency_ms,
+        confidence_score: metricResult.confidence,
+        intent_detected: null,
+        processing_steps: null,
+      } as any);
+      if (alert) {
+        logAIError({
+          conversation_id: visitorPersist.convId,
+          error_type: `alert_${alert.rule_type}`,
+          error_message: alert.message,
+          failure_reason: `severity:${alert.severity}`,
+          resolution_attempted: null,
+          resolved: alert.acknowledged,
+        });
+      }
+    }
+
     setIsLoading(false);
   };
 

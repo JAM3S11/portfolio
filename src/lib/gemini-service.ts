@@ -527,6 +527,118 @@ Here's what I can tell you: James's portfolio includes various projects that dem
 Want to ask me something else in the meantime?`;
 }
 
+export interface MetricResult {
+  text: string;
+  latency_ms: number;
+  total_tokens: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  model: string;
+  confidence: number;
+}
+
+function buildFAQPrompt(userMessage: string, faqContext?: string): string {
+  const contextPrompt = faqContext
+    ? `\n\nKNOWN INFORMATION:\n${faqContext}\n\nUse this information to provide accurate responses. If the user asks about something covered above, reference it naturally.`
+    : "";
+  return `${portfolioContext}${contextPrompt}\n\nUSER QUESTION: ${userMessage}\n\nProvide a helpful, accurate response based on the context above. If the question is covered in the known information, use that. Otherwise, answer based on the general portfolio info.`;
+}
+
+export async function generateGeminiResponseWithMetrics(
+  userMessage: string,
+  faqContext?: string
+): Promise<MetricResult> {
+  if (!apiKey) {
+    const text = getFallbackResponse(userMessage);
+    return { text, latency_ms: 0, total_tokens: 0, prompt_tokens: 0, completion_tokens: 0, model: "fallback", confidence: 0.5 };
+  }
+
+  const start = performance.now();
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", generationConfig, safetySettings });
+    const prompt = buildFAQPrompt(userMessage, faqContext);
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text()?.trim() || getFallbackResponse(userMessage);
+    const latency_ms = Math.round(performance.now() - start);
+    const usage = response.usageMetadata;
+
+    const isFallback = text === getFallbackResponse(userMessage);
+
+    return {
+      text,
+      latency_ms,
+      total_tokens: usage?.totalTokenCount || 0,
+      prompt_tokens: usage?.promptTokenCount || 0,
+      completion_tokens: usage?.candidatesTokenCount || 0,
+      model: "gemini-2.0-flash",
+      confidence: isFallback ? 0.5 : 0.9,
+    };
+  } catch (error: unknown) {
+    console.error("Gemini API error:", error);
+    const latency_ms = Math.round(performance.now() - start);
+    return {
+      text: getFallbackResponse(userMessage),
+      latency_ms,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      model: "gemini-2.0-flash",
+      confidence: 0.3,
+    };
+  }
+}
+
+export async function generateDeepDiveResponseWithMetrics(
+  userMessage: string,
+  focus: string,
+  projectContext: string
+): Promise<MetricResult> {
+  if (!apiKey) {
+    const text = getFallbackDeepDiveResponse(userMessage, focus);
+    return { text, latency_ms: 0, total_tokens: 0, prompt_tokens: 0, completion_tokens: 0, model: "fallback", confidence: 0.5 };
+  }
+
+  const start = performance.now();
+  try {
+    const focusContext = buildDeepDiveFocusContext(focus);
+    const prompt = `You are a senior technical mentor providing deepdive insights about James Daniel's portfolio projects. Your role is to answer questions with real technical depth, referencing actual code, architecture decisions, and trade-offs from his projects.\n\n${portfolioContext}\n\n${focusContext}\n\nPROJECT TECHNICAL CONTEXT (use this to provide specific, accurate answers):\n${projectContext}\n\nUSER QUESTION: ${userMessage}\n\nInstructions:\n- Go deep\n- Reference specific project details\n- Discuss trade-offs\n- Be conversational but precise\n- DO NOT make up information`;
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: deepDiveGenerationConfig,
+      safetySettings,
+    });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text()?.trim() || getFallbackDeepDiveResponse(userMessage, focus);
+    const latency_ms = Math.round(performance.now() - start);
+    const usage = response.usageMetadata;
+
+    return {
+      text,
+      latency_ms,
+      total_tokens: usage?.totalTokenCount || 0,
+      prompt_tokens: usage?.promptTokenCount || 0,
+      completion_tokens: usage?.candidatesTokenCount || 0,
+      model: "gemini-2.0-flash",
+      confidence: 0.9,
+    };
+  } catch (error: unknown) {
+    console.error("Gemini API deep dive error:", error);
+    const latency_ms = Math.round(performance.now() - start);
+    return {
+      text: getFallbackDeepDiveResponse(userMessage, focus),
+      latency_ms,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      model: "gemini-2.0-flash",
+      confidence: 0.3,
+    };
+  }
+}
+
 export function isGeminiConfigured(): boolean {
   return !!apiKey && apiKey.length > 0;
 }

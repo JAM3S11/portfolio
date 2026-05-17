@@ -8,9 +8,6 @@ export default defineConfig([
   globalIgnores([
     'dist',
     'node_modules',
-    'src/lib/*.ts',
-    'src/**/*.ts',
-    'src/**/*.tsx',
     'vite.config.js',
     'src/common/typing-animation.jsx',
     'src/components/ui/*.jsx'

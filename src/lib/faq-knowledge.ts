@@ -1,4 +1,4 @@
-import { generateGeminiResponse, improveFAQResponse, generateDeepDiveResponse as generateDeepDiveGemini, isGeminiConfigured } from "./gemini-service";
+import { generateGeminiResponse, improveFAQResponse, generateDeepDiveResponse as generateDeepDiveGemini, isGeminiConfigured, generateGeminiResponseWithMetrics, generateDeepDiveResponseWithMetrics as generateDeepDiveWithMetrics, type MetricResult } from "./gemini-service";
 import { PROJECTS } from "./project-knowledge";
 
 export interface FAQ {
@@ -829,6 +829,108 @@ export async function generateDeepDiveResponse(
     return response;
   } catch {
     return buildLocalDeepDiveResponse(userMessage, focus, projectContext);
+  }
+}
+
+export async function generateResponseWithMetrics(
+  userMessage: string,
+  context?: FAQContext
+): Promise<MetricResult> {
+  const matchedFAQ = findBestMatch(userMessage);
+
+  if (matchedFAQ && matchedFAQ.keywords.length > 0) {
+    const faqResponse = matchedFAQ.getResponse(undefined, context);
+
+    if (isGeminiConfigured()) {
+      const result = await improveFAQResponseWithMetrics(faqResponse, userMessage);
+      return result;
+    }
+
+    return {
+      text: faqResponse,
+      latency_ms: 0,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      model: "faq",
+      confidence: 0.85,
+    };
+  }
+
+  if (isGeminiConfigured()) {
+    const faqContext = buildFAQContextString();
+    return await generateGeminiResponseWithMetrics(userMessage, faqContext);
+  }
+
+  const fallbackFAQ = faqKnowledgeBase[faqKnowledgeBase.length - 1];
+  return {
+    text: fallbackFAQ.getResponse(),
+    latency_ms: 0,
+    total_tokens: 0,
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    model: "fallback",
+    confidence: 0.4,
+  };
+}
+
+async function improveFAQResponseWithMetrics(
+  originalResponse: string,
+  userQuestion: string
+): Promise<MetricResult> {
+  const start = performance.now();
+  const improved = await improveFAQResponse(originalResponse, userQuestion);
+  const latency_ms = Math.round(performance.now() - start);
+
+  const isImproved = improved !== originalResponse;
+  return {
+    text: improved,
+    latency_ms,
+    total_tokens: 0,
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    model: "gemini-2.0-flash",
+    confidence: isImproved ? 0.85 : 0.5,
+  };
+}
+
+export async function generateDeepDiveResponseWithMetrics(
+  userMessage: string,
+  focus: string
+): Promise<MetricResult> {
+  const projectContext = buildDeepDiveProjectContext(focus);
+
+  if (!isGeminiConfigured()) {
+    const localResponse = buildLocalDeepDiveResponse(userMessage, focus, projectContext);
+    return {
+      text: localResponse,
+      latency_ms: 0,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      model: "local",
+      confidence: 0.7,
+    };
+  }
+
+  try {
+    const result = await generateDeepDiveWithMetrics(userMessage, focus, projectContext);
+    if (result.text.includes("my Gemini API connection")) {
+      const localResponse = buildLocalDeepDiveResponse(userMessage, focus, projectContext);
+      return { ...result, text: localResponse, confidence: 0.7 };
+    }
+    return result;
+  } catch {
+    const localResponse = buildLocalDeepDiveResponse(userMessage, focus, projectContext);
+    return {
+      text: localResponse,
+      latency_ms: 0,
+      total_tokens: 0,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      model: "local",
+      confidence: 0.5,
+    };
   }
 }
 

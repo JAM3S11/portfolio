@@ -12,6 +12,7 @@ import ContactPage from "./pages/ContactPage";
 import Footer from "./common/Footer";
 import AdminDashboard from "./pages/AdminDashboard";
 import ChatWidget from "./components/chat/ChatWidget";
+import { Toaster } from "sonner";
 
 function App() {
   const location = useLocation();
@@ -45,6 +46,9 @@ function App() {
           
           {!isAdminPage && <ChatWidget />}
         </div>
+
+        <Toaster position="top-center" richColors />
+
       </div>
     </ThemeProvider>
   );

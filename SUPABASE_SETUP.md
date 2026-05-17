@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS admin_settings (
 
 -- Insert default admin password (CHANGE THIS!)
 INSERT INTO admin_settings (admin_password, email_notifications_enabled, notification_email)
-VALUES ('your-secure-password-here', true, 'jdndirangu2020@gmail.com');
+VALUES ('your-secure-password-here', true, 'example@gmail.com');
 
 -- Enable RLS
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
@@ -117,7 +117,7 @@ Replace with your actual values from Step 2.
 
 1. Go to **Project Settings** → **Members**
 2. Click "Invite Member"
-3. Enter: `jdndirangu2020@gmail.com`
+3. Enter: `example0@gmail.com`
 4. Assign role: `Developer`
 
 ---

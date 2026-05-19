@@ -25,6 +25,64 @@ const ExperiencePage = () => {
           desc: "Worked closely with stakeholders to translate complex requirements into a sophisticated, dark-mode-supported user interface."
         }
       ]
+    },
+    {
+      company: "Enmowe Technologies -> Zunu Emobility",
+      role: "Software Developer Intern",
+      duration: "January 2026 - April 2026",
+      points: [
+        {
+          label: "Product Thinking",
+          desc: "Gained hands-on experience translating real user pain points into production-ready UX improvements for finance workflows."
+        },
+        {
+          label: "Frontend Engineering",
+          desc: "Strengthened my ability to build reliable UI behavior in dynamic interfaces, especially for keyboard-first interaction patterns."
+        },
+        {
+          label: "Problem-Solving Under Review",
+          desc: "Learned how to refine implementation details through review feedback, improving edge-case handling and solution quality."
+        },
+        {
+          label: "Code Quality Discipline",
+          desc: "Developed stronger habits around writing safe, maintainable frontend logic with idempotent script patterns and scoped selectors."
+        },
+        {
+          label: "Collaboration in Real Delivery",
+          desc: "Improved communication with reviewers and stakeholders, turning technical feedback into measurable usability improvements."
+        }
+      ]
+    },
+    {
+      company: "SOLEASE",
+      role: "Founder & Full-Stack Product Engineer",
+      duration: "March 2026 - Present",
+      points: [
+        {
+          label: "Product Ownership & Execution",
+          desc: "Conceived, built and iteratively shipped SOLEASE from idea to working product, owning roadmap decisions, architecture and release cycles."
+        },
+        {
+          label: "End-to-End Engineering",
+          desc: "Developed the platform across frontend, backend APIs, authentication and database systems, delivering core modules for user workflows, admin operations and reporting."
+        },
+        {
+          label: "AI & Automation",
+          desc: "Integrated AI assistant/chat capabilities and automation-focused features to improve user support, productivity and operational visibility."
+        },
+        {
+          label: "Security & Indentity",
+          desc: "Implemented secure authentication flows (including OAuth providers), profile management and robust upload handling with improved validation and lifecycle controls."
+        },
+        {
+          label: "UX, Growth & Iteration",
+          desc: "Led continuous UI/UX refinements, role-based experience improvements and versioned updates based on testing, usage behavior and product goals."
+        },
+        // {
+        //   label: "Founder Impact",
+        //   desc: "Managed both technical delivery and startup momentum — balancing product development, troubleshooting, infrastructure decisions and go-to-market readiness."
+        // }
+      ]
     }
   ];
 

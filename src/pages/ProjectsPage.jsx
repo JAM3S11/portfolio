@@ -29,7 +29,7 @@ const ProjectsPage = () => {
         hasTests: false,
         hasDocs: false
       },
-{
+    {
         title: "Open Weather Demo",
         description: "A real-time weather tracking application utilizing RESTful APIs to deliver accurate meteorological data with a focus on clean data visualization.",
         tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Axios"],
@@ -44,7 +44,7 @@ const ProjectsPage = () => {
         hasTests: false,
         hasDocs: false
       },
-{
+    {
         title: "Greatwall",
         description: "A sovereign energy protocol merging AI and Web3 to decentralize the power grid, enhancing transparency and efficiency in the Kenyan energy sector.",
         tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Framer Motion", "Web3.js"],
@@ -59,9 +59,9 @@ const ProjectsPage = () => {
         hasTests: false,
         hasDocs: false
       },
-{
+    {
         title: "SOLEASE",
-        description: "A full-scale ITSM platform featuring role-based access control, automated ticketing workflows, and real-time data analytics for organizational support.",
+        description: "Currently being revamping to an agentic operating system...",
         tech: [
           "React 19", "TailwindCSS", "DaisyUI", "Zustand", "React Router", "Framer Motion", "MUI X Charts", "Axios",
           "Node.js", "Express 5", "MongoDB", "Mongoose", "JWT", "Nodemailer", "bcrypt", "crypto"
@@ -72,12 +72,12 @@ const ProjectsPage = () => {
         imageText: "SOLEASE",
         imageSubtext: "Comprehensive IT service management platform",
         accentColor: "text-emerald-400",
-        status: "InProgress",
+        status: "Revamping",
         category: "fullstack",
         hasTests: true,
         hasDocs: true
       },
-{
+    {
         title: "eticketing",
         description: "A server-side IT support management system built with PHP and MySQL, streamlining ticket lifecycle management and inter-departmental collaboration.",
         tech: ["PHP", "MySQL", "CSS", "Bootstrap", "AJAX"],
@@ -92,22 +92,7 @@ const ProjectsPage = () => {
         hasTests: false,
         hasDocs: false
       },
-{
-       title: "HOSPITABILITY",
-       description: "Hospitality Kenya is a premium provider of hospitality supplies, delivering excellence from industrial detergents to luxury amenities across Kenya.",
-       tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
-       github: "https://github.com/JAM3S11/hospitality.git",
-       live: "https://sparklesltd.vercel.app",
-       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20210325.png",
-       imageText: "HOSPITALITY",
-       imageSubtext: "Hospitality service provider",
-       accentColor: "text-emerald-400",
-       status: "Demo Illustration",
-       category: "frontend",
-       hasTests: false,
-       hasDocs: false
-     },
-{
+    {
        title: "WANTACH WORKFLOW ILLUSTRATION",
        description: "An n8n-style automation workflow diagram built with Next.js 14, TypeScript, and Tailwind CSS. This project visualizes the end-to-end registration process for RegEase Kenya, including client intake, document validation, government portal integration and payment automation",
        tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
@@ -121,7 +106,22 @@ const ProjectsPage = () => {
        category: "frontend",
        hasTests: false,
        hasDocs: false
-     }
+      },
+    {
+      title: "EntryWave",
+      description: "EntryWave is more than an invitation — it’s a full-featured event experience portal. It serves as the flagship implementation of a long-term entrywave infrastructure, merging the  initial ideation for the Kenyan market and elevating it into a highly immersive, interactive tool for modern celebrations.",
+      tech: ["Typescript", "Tailwind", "Node.Js", "Firebase"],
+      github: "https://github.com/JAM3S11/entrywave.git",
+      live: "https://entrywave.vercel.app",
+      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-06-13%20224656.png",
+      imageText: "ENTRYWAVE",
+      imageSubtext: "Initial EntryWave ideation plan",
+      accentColor: "text-emerald-400",
+      status: "More coming",
+      category: "fullstack",
+      hasTests: true,
+      hasDocs: false
+    }
   ];
 
   const filteredProjects = activeFilter === 'all' 

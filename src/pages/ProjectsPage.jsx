@@ -63,16 +63,15 @@ const ProjectsPage = () => {
         title: "SOLEASE",
         description: "Currently being revamping to an agentic operating system...",
         tech: [
-          "React 19", "TailwindCSS", "DaisyUI", "Zustand", "React Router", "Framer Motion", "MUI X Charts", "Axios",
-          "Node.js", "Express 5", "MongoDB", "Mongoose", "JWT", "Nodemailer", "bcrypt", "crypto"
+          "Typescript", "Supabase", "Clerk", "Tailwind v4",
         ],
         github: "https://github.com/JAM3S11/solease.git",
-        live: "#",
-        image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20204046.png",
+        live: "https://solease.vercel.app",
+        image: "https://ik.imagekit.io/jimdanliveurl/solease.png",
         imageText: "SOLEASE",
-        imageSubtext: "Comprehensive IT service management platform",
+        imageSubtext: "Engineering Operation Platform",
         accentColor: "text-emerald-400",
-        status: "Revamping",
+        status: "Building",
         category: "fullstack",
         hasTests: true,
         hasDocs: true

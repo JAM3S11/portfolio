@@ -66,7 +66,7 @@ const ProjectsPage = () => {
           "Typescript", "Supabase", "Clerk", "Tailwind v4",
         ],
         github: "https://github.com/JAM3S11/solease.git",
-        live: "https://solease.vercel.app",
+        live: "#",
         image: "https://ik.imagekit.io/jimdanliveurl/solease.png",
         imageText: "SOLEASE",
         imageSubtext: "Engineering Operation Platform",

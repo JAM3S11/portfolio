@@ -1,6 +1,6 @@
-import React from 'react';
-import ThemeToggle from './ThemeToggle';
-import { Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '../../lib/utils';
 
 const navLinks = [
   { name: 'About', path: '#about' },
@@ -8,34 +8,43 @@ const navLinks = [
   { name: 'Projects', path: '#projects' },
 ];
 
-const DesktopNav = () => {
+const DesktopNav = ({ active }) => {
+  const [hovered, setHovered] = useState(null);
+  // The pill follows the hovered link, falling back to the section in view
+  const highlighted = hovered ?? active;
+
   return (
-    <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-      <div className="flex items-center gap-6 lg:gap-8">
-        {navLinks.map((link) => (
+    <nav
+      aria-label="Primary"
+      onMouseLeave={() => setHovered(null)}
+      className="hidden md:flex isolate items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1"
+    >
+      {navLinks.map((link) => {
+        const id = link.path.slice(1);
+        const isActive = active === id;
+
+        return (
           <a
             key={link.name}
             href={link.path}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
+            onMouseEnter={() => setHovered(id)}
+            aria-current={isActive ? 'true' : undefined}
+            className={cn(
+              'relative px-4 py-1.5 text-sm font-medium rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+              isActive || hovered === id ? 'text-foreground' : 'text-muted-foreground'
+            )}
           >
+            {highlighted === id && (
+              <motion.span
+                layoutId="nav-pill"
+                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                className="absolute inset-0 -z-10 rounded-full bg-background shadow-sm ring-1 ring-border/60"
+              />
+            )}
             {link.name}
-            <span className="absolute -bottom-[22px] left-0 w-full h-0.5 bg-brand scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
           </a>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 lg:gap-4">
-        <div className="h-4 w-px bg-border/60" />
-        
-        <ThemeToggle />
-
-        <a
-          href="#contact"
-          className="flex items-center justify-center rounded-md h-9 px-4 bg-brand hover:bg-blue-600 transition-all text-white text-xs font-mono font-bold tracking-tight shadow-sm active:scale-95"
-        >
-          GET_IN_TOUCH
-        </a>
-      </div>
+        );
+      })}
     </nav>
   );
 };

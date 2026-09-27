@@ -1,497 +1,438 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import {
+  Sparkles, X, ArrowUp, RotateCcw, Maximize2, Minimize2,
+  Briefcase, Layers, Code2, Handshake, Server, Boxes,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  createConversation, 
-  addMessage, 
-  subscribeToMessages,
-  isSupabaseConfigured 
-} from '@/lib/chat-service';
-import { generateResponseWithMetrics, generateDeepDiveResponseWithMetrics, welcomeMessage } from '@/lib/faq-knowledge';
-import { logAIInteraction, logAIError } from '@/lib/analytics-service';
-import { evaluateInteraction, createNewConversationAlert } from '@/lib/alert-service';
+import { cn } from '@/lib/utils';
+import { useViewport, useBodyScrollLock } from '@/hooks';
+import ChatMessage from './ChatMessage';
+import { useChat, type DeepFocus } from './useChat';
 
 interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
 }
 
-const VISITOR_INTENTS = [
-  { label: '💼 Hiring / Job', value: 'hiring', keywords: ['hire', 'job', 'employment', 'freelance'] },
-  { label: '🛠️ Project Quote', value: 'quote', keywords: ['quote', 'project', 'cost', 'budget'] },
-  { label: '💻 Tech Inquiry', value: 'tech', keywords: ['tech', 'skills', 'how', 'what'] },
-  { label: '🤝 Partnership', value: 'partnership', keywords: ['partner', 'collab', 'team'] },
-  { label: '❓ General FAQ', value: 'faq', keywords: ['faq', 'question', 'info'] },
+const SUGGESTED_PROMPTS = [
+  { icon: Briefcase, text: 'Is James open to new roles?', intent: 'hiring' },
+  { icon: Layers, text: 'What has he built recently?', intent: 'faq' },
+  { icon: Code2, text: "What's his tech stack?", intent: 'tech' },
+  { icon: Handshake, text: 'Can he quote a project for me?', intent: 'quote' },
 ];
 
-const DEEP_DIVE_INTENTS = [
-  { label: '🎯 Frontend Deep Dive', value: 'deep_frontend', focus: 'frontend' },
-  { label: '⚙️ Backend Deep Dive', value: 'deep_backend', focus: 'backend' },
-  { label: '🔧 Fullstack Deep Dive', value: 'deep_fullstack', focus: 'fullstack' },
-  { label: '🏗️ Software Deep Dive', value: 'deep_software', focus: 'software' },
+const DEEP_DIVE_OPTIONS: { focus: DeepFocus; label: string; desc: string; icon: typeof Code2 }[] = [
+  { focus: 'frontend', label: 'Frontend', desc: 'Components, state, styling', icon: Code2 },
+  { focus: 'backend', label: 'Backend', desc: 'APIs, databases, auth', icon: Server },
+  { focus: 'fullstack', label: 'Full-stack', desc: 'Data flow end to end', icon: Layers },
+  { focus: 'software', label: 'Software engineering', desc: 'Design, testing, trade-offs', icon: Boxes },
 ];
+
+const FOLLOW_UPS = ['Tell me about SOLEASE', "What's his experience?", 'How can I contact him?', 'What is he working on now?'];
+
+const TEASER_KEY = 'jdg-chat-teaser-seen';
+const TEASER_DELAY_MS = 8000;
+const MAX_INPUT = 1000;
+
+const readFlag = (key: string) => {
+  try { return sessionStorage.getItem(key) === '1'; } catch { return false; }
+};
+const setFlag = (key: string) => {
+  try { sessionStorage.setItem(key, '1'); } catch { /* storage unavailable */ }
+};
+
+const TypingIndicator = () => (
+  <div className="flex items-center gap-3" aria-label="Assistant is typing">
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 to-brand text-white">
+      <Sparkles size={12} />
+    </span>
+    <div className="flex items-center gap-1">
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-bounce"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+      <span className="ml-2 text-xs text-muted-foreground">Thinking…</span>
+    </div>
+  </div>
+);
 
 export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
+  const chat = useChat();
+  const { messages, mode, deepFocus, isLoading, isSupabase } = chat;
+
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<{role: 'visitor' | 'bot'; content: string}[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isSupabase, setIsSupabase] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const conversationIdRef = useRef<string | null>(null);
-  const selectedIntentRef = useRef<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [input, setInput] = useState('');
+  const [showTeaser, setShowTeaser] = useState(false);
 
-  const [deepDiveFocus, setDeepDiveFocus] = useState<string | null>(null);
-  const [subLoading, setSubLoading] = useState(false);
+  const isDesktop = useViewport(640);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
 
-  // Keep refs in sync with state so async callbacks always read latest value
-  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
-  useEffect(() => { selectedIntentRef.current = selectedIntent; }, [selectedIntent]);
+  const isRight = position === 'bottom-right';
+  const isAnimating = messages.some((m) => m.animate);
+  const lastMessage = messages[messages.length - 1];
+  const askedPrompts = new Set(messages.filter((m) => m.role === 'visitor').map((m) => m.content));
+  const followUps = FOLLOW_UPS.filter((f) => !askedPrompts.has(f)).slice(0, 3);
+  const activeFocus = DEEP_DIVE_OPTIONS.find((o) => o.focus === deepFocus);
 
+  // Full-screen sheet on phones, so stop the page scrolling behind it
+  useBodyScrollLock(isOpen && !isDesktop);
+
+  const open = useCallback(() => {
+    setIsOpen(true);
+    setShowTeaser(false);
+    setFlag(TEASER_KEY);
+  }, []);
+
+  const close = useCallback(() => {
+    setIsOpen(false);
+    launcherRef.current?.focus();
+  }, []);
+
+  // One-time teaser for visitors who haven't opened the assistant
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.pageYOffset > 400);
+    if (readFlag(TEASER_KEY)) return;
+    const id = setTimeout(() => setShowTeaser(true), TEASER_DELAY_MS);
+    return () => clearTimeout(id);
+  }, []);
+
+  // ⌘K / Ctrl+K toggles, Escape closes
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (isOpen) close();
+        else open();
+      } else if (e.key === 'Escape' && isOpen) {
+        close();
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, open, close]);
+
+  // Focus the composer when the panel opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = setTimeout(() => inputRef.current?.focus(), 150);
+    return () => clearTimeout(id);
+  }, [isOpen]);
+
+  const scrollToBottom = useCallback((force = false) => {
+    const el = listRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (force || nearBottom) el.scrollTop = el.scrollHeight;
   }, []);
 
   useEffect(() => {
-    setIsSupabase(isSupabaseConfigured());
-  }, []);
+    scrollToBottom(true);
+  }, [messages.length, isLoading, isOpen, scrollToBottom]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  useEffect(() => {
-    if (!conversationId || !isSupabase) return;
-    const unsubscribe = subscribeToMessages(conversationId, () => {});
-    return () => unsubscribe();
-  }, [conversationId, isSupabase]);
-
-  const addBotMessage = useCallback((content: string) => {
-    setMessages(prev => [...prev, { role: 'bot', content }]);
-  }, []);
-
-  const addVisitorMessage = useCallback((content: string) => {
-    setMessages(prev => [...prev, { role: 'visitor', content }]);
-  }, []);
-
-  const persistMessage = useCallback(async (role: 'visitor' | 'bot', content: string): Promise<{ convId: string; msgId: string } | null> => {
-    if (!isSupabase) return null;
-    let convId = conversationIdRef.current;
-    if (!convId) {
-      const intent = selectedIntentRef.current || 'deep_frontend';
-      const conv = await createConversation(undefined, undefined, intent);
-      if (conv) {
-        convId = conv.id;
-        conversationIdRef.current = conv.id;
-        setConversationId(conv.id);
-      }
-    }
-    if (convId) {
-      const msg = await addMessage(convId, role, content);
-      if (msg) {
-        return { convId, msgId: msg.id };
-      }
-    }
-    return null;
-  }, [isSupabase]);
-
-  const resetDeepDive = useCallback(() => {
-    setDeepDiveFocus(null);
-    setSubLoading(false);
-  }, []);
-
-  const startConversation = async () => {
-    setIsLoading(true);
-    setSelectedIntent(null);
-    resetDeepDive();
-    setMessages([{ role: 'bot', content: welcomeMessage }]);
-    setIsLoading(false);
+  const resizeInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   };
 
-  const handleSelectIntent = async (intent: typeof VISITOR_INTENTS[0]) => {
-    setSelectedIntent(intent.value);
-    const userMessage = `I'm interested in: ${intent.label}`;
-    addVisitorMessage(userMessage);
-    setIsLoading(true);
-    const metricResult = await generateResponseWithMetrics(userMessage);
-    addBotMessage(metricResult.text);
-    const visitorPersist = await persistMessage('visitor', userMessage);
-    const botPersist = await persistMessage('bot', metricResult.text);
-    if (visitorPersist && botPersist && metricResult.latency_ms > 0) {
-      logAIInteraction({
-        conversation_id: visitorPersist.convId,
-        message_id: botPersist.msgId,
-        prompt: userMessage,
-        response: metricResult.text,
-        model: metricResult.model,
-        prompt_tokens: metricResult.prompt_tokens,
-        completion_tokens: metricResult.completion_tokens,
-        total_tokens: metricResult.total_tokens,
-        latency_ms: metricResult.latency_ms,
-        confidence_score: metricResult.confidence,
-        intent_detected: intent.value,
-        processing_steps: null,
-      });
-      const alert = evaluateInteraction({
-        conversation_id: visitorPersist.convId,
-        message_id: botPersist.msgId,
-        prompt: userMessage,
-        response: metricResult.text,
-        model: metricResult.model,
-        prompt_tokens: metricResult.prompt_tokens,
-        completion_tokens: metricResult.completion_tokens,
-        total_tokens: metricResult.total_tokens,
-        latency_ms: metricResult.latency_ms,
-        confidence_score: metricResult.confidence,
-        intent_detected: intent.value,
-        processing_steps: null,
-      } as any);
-      if (alert) {
-        logAIError({
-          conversation_id: visitorPersist.convId,
-          error_type: `alert_${alert.rule_type}`,
-          error_message: alert.message,
-          failure_reason: `severity:${alert.severity}`,
-          resolution_attempted: null,
-          resolved: alert.acknowledged,
-        });
-      }
-    }
-    setIsLoading(false);
+  const submit = (text: string, intent: string | null = null) => {
+    if (!text.trim() || isLoading) return;
+    chat.send(text, intent);
+    setInput('');
+    requestAnimationFrame(resizeInput);
   };
 
-  const handleDeepDiveSelect = async (intent: typeof DEEP_DIVE_INTENTS[0]) => {
-    setSelectedIntent(intent.value);
-    setDeepDiveFocus(intent.focus);
-    setSubLoading(true);
-
-    const msg = `I want to explore: ${intent.label}`;
-    addVisitorMessage(msg);
-    await persistMessage('visitor', msg);
-
-    const welcomeMap: Record<string, string> = {
-      frontend: `🎯 **Frontend Deep Dive** activated!
-
-I can walk you through the frontend architecture across all of James's projects — from SOLEASE's Zustand state management to Greatwall's Web3 integration layer.
-
-**Ask me about:**
-• Component architecture and patterns used in each project
-• State management decisions (Zustand vs Redux vs local state)
-• Styling approaches (Tailwind, DaisyUI, shadcn/ui)
-• Performance optimization and bundle strategies
-• Accessibility patterns and trade-offs
-
-What frontend topic would you like to explore?`,
-      backend: `⚙️ **Backend Deep Dive** activated!
-
-Let's explore the backend systems powering James's projects — from Express 5 APIs to database migrations and auth strategies.
-
-**Ask me about:**
-• API design patterns (REST, middleware chains, error handling)
-• Database schema decisions (PostgreSQL, Prisma ORM, MongoDB migrations)
-• Authentication & authorization (JWT, OAuth, role-based access)
-• Security considerations (rate limiting, CSRF, XSS prevention)
-• Scalability approaches and caching strategies
-
-What backend topic interests you?`,
-      fullstack: `🔧 **Fullstack Deep Dive** activated!
-
-Let's trace the full data flow through James's projects — from UI components all the way to the database and back.
-
-**Ask me about:**
-• End-to-end architecture (monorepo structure, frontend-backend communication)
-• Data flow patterns (state management → API calls → persistence)
-• DevOps and deployment strategies
-• Full-stack security considerations
-• Scaling full-stack applications
-
-What fullstack aspect would you like to dive into?`,
-      software: `🏗️ **Software Engineering Deep Dive** activated!
-
-Let's analyze the engineering practices across James's portfolio — from system design to code quality and testing strategies.
-
-**Ask me about:**
-• System design decisions and architectural trade-offs
-• Testing strategies and code quality patterns
-• Technical debt identification and refactoring priorities
-• Project planning and scalability considerations
-• Code organization and design patterns
-
-What software engineering topic would you like to discuss?`,
-    };
-
-    const welcomeMsg = welcomeMap[intent.focus] || `Deep Dive mode activated for ${intent.label}! Ask me anything about the technical details.`;
-    addBotMessage(welcomeMsg);
-    await persistMessage('bot', welcomeMsg);
-    setSubLoading(false);
-  };
-
-  const handleBackToNormal = () => {
-    resetDeepDive();
-    setSelectedIntent(null);
-    setMessages([{ role: 'bot', content: welcomeMessage }]);
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage = inputValue.trim();
-    setInputValue('');
-    addVisitorMessage(userMessage);
-    const visitorPersist = await persistMessage('visitor', userMessage);
-    setIsLoading(true);
-
-    let metricResult;
-    if (deepDiveFocus) {
-      metricResult = await generateDeepDiveResponseWithMetrics(userMessage, deepDiveFocus);
-    } else {
-      metricResult = await generateResponseWithMetrics(userMessage);
-    }
-
-    addBotMessage(metricResult.text);
-    const botPersist = await persistMessage('bot', metricResult.text);
-
-    if (visitorPersist && botPersist && metricResult.latency_ms > 0) {
-      logAIInteraction({
-        conversation_id: visitorPersist.convId,
-        message_id: botPersist.msgId,
-        prompt: userMessage,
-        response: metricResult.text,
-        model: metricResult.model,
-        prompt_tokens: metricResult.prompt_tokens,
-        completion_tokens: metricResult.completion_tokens,
-        total_tokens: metricResult.total_tokens,
-        latency_ms: metricResult.latency_ms,
-        confidence_score: metricResult.confidence,
-        intent_detected: null,
-        processing_steps: null,
-      });
-      const alert = evaluateInteraction({
-        conversation_id: visitorPersist.convId,
-        message_id: botPersist.msgId,
-        prompt: userMessage,
-        response: metricResult.text,
-        model: metricResult.model,
-        prompt_tokens: metricResult.prompt_tokens,
-        completion_tokens: metricResult.completion_tokens,
-        total_tokens: metricResult.total_tokens,
-        latency_ms: metricResult.latency_ms,
-        confidence_score: metricResult.confidence,
-        intent_detected: null,
-        processing_steps: null,
-      } as any);
-      if (alert) {
-        logAIError({
-          conversation_id: visitorPersist.convId,
-          error_type: `alert_${alert.rule_type}`,
-          error_message: alert.message,
-          failure_reason: `severity:${alert.severity}`,
-          resolution_attempted: null,
-          resolved: alert.acknowledged,
-        });
-      }
-    }
-
-    setIsLoading(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      submit(input);
     }
   };
 
-  const positionClasses = position === 'bottom-right' 
-    ? isScrolled ? 'bottom-24 right-6' : 'bottom-6 right-6'
-    : isScrolled ? 'bottom-24 left-6' : 'bottom-6 left-6';
-
-  const isInterviewLoading = subLoading;
+  const side = isRight ? 'right-4 sm:right-6' : 'left-4 sm:left-6';
 
   return (
-    <div className={`fixed ${positionClasses} right-4 sm:right-6 z-[60] transition-all duration-300`}>
+    <>
+      {/* Panel */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            role="dialog"
+            aria-label="James's AI assistant"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 w-[360px] max-w-[calc(100vw-3rem)] h-[500px] max-h-[calc(100vh-12rem)] sm:w-[360px] sm:h-[500px] bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden"
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={cn(
+              'fixed z-[70] flex flex-col overflow-hidden bg-card text-foreground shadow-2xl shadow-black/20',
+              'inset-0 sm:inset-auto sm:rounded-2xl sm:border sm:border-border',
+              isRight ? 'sm:right-6 origin-bottom-right' : 'sm:left-6 origin-bottom-left',
+              expanded
+                ? 'sm:top-4 sm:bottom-4 sm:w-[560px]'
+                : 'sm:bottom-24 sm:h-[640px] sm:max-h-[calc(100vh-8rem)] sm:w-[400px]'
+            )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-blue-600 text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <Bot size={20} />
+            <div className="border-b border-border">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 to-brand text-white shadow-[0_0_16px_rgba(56,189,248,0.35)]">
+                    <Sparkles size={16} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">James's AI assistant</p>
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className={cn('h-1.5 w-1.5 rounded-full', isSupabase ? 'bg-green-500' : 'bg-amber-500')} />
+                      {mode === 'deep' && activeFocus
+                        ? `Deep dive · ${activeFocus.label}`
+                        : isSupabase ? 'Online' : 'Demo mode'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold">
-                    {deepDiveFocus
-                      ? `🔬 ${deepDiveFocus.charAt(0).toUpperCase() + deepDiveFocus.slice(1)} Deep Dive`
-                      : 'AI Assistant'}
-                  </h3>
-                  <p className="text-xs text-white/80">
-                    {deepDiveFocus
-                      ? 'Deep Dive Mode'
-                      : 'Ask me anything!'}
-                  </p>
+
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={chat.reset}
+                    disabled={messages.length === 0 || isLoading}
+                    aria-label="Start a new chat"
+                    title="New chat"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((v) => !v)}
+                    aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
+                    title={expanded ? 'Collapse' : 'Expand'}
+                    className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={close}
+                    aria-label="Close assistant"
+                    title="Close (Esc)"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <X size={17} />
+                  </button>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
+
+              {/* Mode tabs */}
+              <div className="px-4 pb-3">
+                <div role="tablist" aria-label="Assistant mode" className="isolate grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
+                  {(['chat', 'deep'] as const).map((m) => (
+                    <button
+                      key={m}
+                      role="tab"
+                      aria-selected={mode === m}
+                      onClick={() => chat.switchMode(m)}
+                      className={cn(
+                        'relative rounded-md py-1.5 text-xs font-medium transition-colors',
+                        mode === m ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {mode === m && (
+                        <motion.span
+                          layoutId="chat-mode-pill"
+                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                          className="absolute inset-0 -z-10 rounded-md bg-background shadow-sm ring-1 ring-border"
+                        />
+                      )}
+                      {m === 'chat' ? 'Chat' : 'Deep dive'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {selectedIntent === null && !deepDiveFocus ? (
-                <div className="space-y-4">
-                  <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4">
-                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <Bot size={32} className="text-blue-600" />
+            {/* Conversation */}
+            <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-5" aria-live="polite">
+              {messages.length === 0 ? (
+                mode === 'chat' ? (
+                  <div className="flex h-full flex-col justify-end gap-5">
+                    <div>
+                      <p className="text-lg font-semibold tracking-tight">Hi, I'm James's assistant 👋</p>
+                      <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                        Ask about his projects, stack, experience or availability. I answer from his portfolio.
+                      </p>
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">
-                      How can I help you today?
-                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {SUGGESTED_PROMPTS.map(({ icon: Icon, text, intent }) => (
+                        <button
+                          key={text}
+                          type="button"
+                          onClick={() => submit(text, intent)}
+                          className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-background p-3 text-left text-sm hover:border-brand/40 hover:bg-muted/40 transition-colors"
+                        >
+                          <Icon size={16} className="text-muted-foreground group-hover:text-brand transition-colors" />
+                          <span className="leading-snug">{text}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  
-                  {/* Standard Intents */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1 uppercase tracking-wider">Quick Actions</p>
-                    {VISITOR_INTENTS.map((intent) => (
-                      <button
-                        key={intent.value}
-                        onClick={() => handleSelectIntent(intent)}
-                        disabled={isLoading}
-                        className="p-3 text-left rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-sm"
-                      >
-                        {intent.label}
-                      </button>
-                    ))}
+                ) : (
+                  <div className="flex h-full flex-col justify-end gap-5">
+                    <div>
+                      <p className="text-lg font-semibold tracking-tight">Go deeper into the engineering</p>
+                      <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                        Pick an area and ask about architecture, trade-offs and implementation details across James's projects.
+                      </p>
+                    </div>
+                    <DeepDivePicker onPick={chat.startDeepDive} />
                   </div>
+                )
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((m) => (
+                    <ChatMessage
+                      key={m.id}
+                      message={m}
+                      onRate={chat.rate}
+                      onAnimationDone={chat.finishAnimation}
+                      onGrow={() => scrollToBottom()}
+                      onContact={close}
+                    />
+                  ))}
 
-                  {/* Deep Dive Intents */}
-                  <div className="grid grid-cols-1 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-purple-500 dark:text-purple-400 font-medium px-1 uppercase tracking-wider">🔬 Deep Dive Insights</p>
-                    {DEEP_DIVE_INTENTS.map((intent) => (
-                      <button
-                        key={intent.value}
-                        onClick={() => handleDeepDiveSelect(intent)}
-                        disabled={isLoading}
-                        className="p-3 text-left rounded-lg bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors text-sm border border-purple-200 dark:border-purple-800"
-                      >
-                        {intent.label}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {!isSupabase && (
-                    <p className="text-xs text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full text-center">
-                      Demo Mode (offline)
-                    </p>
+                  {isLoading && <TypingIndicator />}
+
+                  {/* Next steps under the latest answer */}
+                  {!isLoading && !isAnimating && lastMessage?.role === 'bot' && (
+                    mode === 'deep' && !deepFocus ? (
+                      <DeepDivePicker onPick={chat.startDeepDive} compact />
+                    ) : mode === 'chat' && followUps.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 pl-9">
+                        {followUps.map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => submit(f)}
+                            className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-brand/40 transition-colors"
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null
                   )}
                 </div>
-              ) : (
-                messages.map((msg, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${msg.role === 'visitor' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex gap-2 max-w-[80%] ${msg.role === 'visitor' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${
-                        msg.role === 'visitor' 
-                          ? 'bg-blue-600' 
-                          : 'bg-gray-200 dark:bg-gray-700'
-                      }`}>
-                        {msg.role === 'visitor' ? (
-                          <User size={14} className="text-white" />
-                        ) : (
-                          <Bot size={14} className="text-gray-600 dark:text-gray-300" />
-                        )}
-                      </div>
-                      <div className={`p-3 rounded-2xl ${
-                        msg.role === 'visitor'
-                          ? 'bg-blue-600 text-white rounded-br-md'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md'
-                      }`}>
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
               )}
-              
-              {(isLoading || isInterviewLoading) && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="flex gap-2 max-w-[80%]">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <Bot size={14} className="text-gray-600 dark:text-gray-300" />
-                    </div>
-                    <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 rounded-bl-md">
-                      <Loader2 size={16} className="animate-spin text-gray-500" />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              
-              <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={deepDiveFocus ? 'Ask about project internals...' : 'Type a message...'}
-                  disabled={isLoading || isInterviewLoading}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-40"
+            {/* Composer */}
+            <div className="border-t border-border p-3">
+              <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10 transition">
+                <label htmlFor="chat-input" className="sr-only">Message</label>
+                <textarea
+                  id="chat-input"
+                  ref={inputRef}
+                  rows={1}
+                  value={input}
+                  maxLength={MAX_INPUT}
+                  onChange={(e) => { setInput(e.target.value); resizeInput(); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder={mode === 'deep' && activeFocus ? `Ask about ${activeFocus.label.toLowerCase()} internals…` : 'Ask anything…'}
+                  className="max-h-[140px] flex-1 resize-none bg-transparent py-1 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
                 />
                 <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isLoading || isInterviewLoading}
-                  className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  type="button"
+                  onClick={() => submit(input)}
+                  disabled={!input.trim() || isLoading}
+                  aria-label="Send message"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:bg-brand hover:text-white disabled:bg-muted disabled:text-muted-foreground"
                 >
-                  <Send size={18} />
+                  <ArrowUp size={16} />
                 </button>
               </div>
+              <p className="mt-2 px-1 text-[11px] text-muted-foreground">
+                AI can make mistakes. For anything important,{' '}
+                <a href="#contact" onClick={close} className="text-foreground underline underline-offset-2 hover:text-brand">
+                  talk to James
+                </a>
+                .
+              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Floating Button */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => {
-          if (!isOpen && messages.length === 0) {
-            startConversation();
-          }
-          setIsOpen(!isOpen);
-        }}
-        className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center transition-colors"
-      >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-      </motion.button>
-    </div>
+      {/* Launcher + teaser */}
+      <div className={cn('fixed bottom-4 sm:bottom-6 z-[60] flex flex-col gap-3', side, isRight ? 'items-end' : 'items-start', isOpen && 'hidden sm:flex')}>
+        <AnimatePresence>
+          {showTeaser && !isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="relative flex max-w-[240px] items-start gap-2 rounded-xl border border-border bg-card p-3 pr-8 text-sm shadow-lg"
+            >
+              <button type="button" onClick={open} className="text-left">
+                <span className="font-medium text-foreground">Questions about my work?</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">Ask my AI assistant anything.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowTeaser(false); setFlag(TEASER_KEY); }}
+                aria-label="Dismiss"
+                className="absolute top-2 right-2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X size={13} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          ref={launcherRef}
+          type="button"
+          whileTap={{ scale: 0.96 }}
+          onClick={() => (isOpen ? close() : open())}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? 'Close AI assistant' : 'Open AI assistant'}
+          className="group flex h-12 items-center gap-2 rounded-full border border-border bg-foreground pl-4 pr-3 text-sm font-medium text-background shadow-lg shadow-black/20 hover:bg-brand hover:text-white transition-colors"
+        >
+          {isOpen ? <X size={16} /> : <Sparkles size={16} />}
+          <span>{isOpen ? 'Close' : 'Ask AI'}</span>
+          <kbd className="hidden sm:inline-flex items-center rounded-md border border-background/20 px-1.5 py-0.5 font-mono text-[10px] opacity-70 group-hover:border-white/30">
+            ⌘K
+          </kbd>
+        </motion.button>
+      </div>
+    </>
   );
 }
+
+const DeepDivePicker = ({
+  onPick,
+  compact = false,
+}: {
+  onPick: (focus: DeepFocus, label: string) => void;
+  compact?: boolean;
+}) => (
+  <div className={cn('grid gap-2', compact ? 'grid-cols-2 pl-9' : 'grid-cols-1 sm:grid-cols-2')}>
+    {DEEP_DIVE_OPTIONS.map(({ focus, label, desc, icon: Icon }) => (
+      <button
+        key={focus}
+        type="button"
+        onClick={() => onPick(focus, `${label} deep dive`)}
+        className="group flex items-start gap-3 rounded-xl border border-border bg-background p-3 text-left hover:border-cyan-500/40 hover:bg-muted/40 transition-colors"
+      >
+        <Icon size={16} className="mt-0.5 shrink-0 text-muted-foreground group-hover:text-cyan-500 transition-colors" />
+        <span>
+          <span className="block text-sm font-medium leading-snug">{label}</span>
+          {!compact && <span className="block text-xs text-muted-foreground">{desc}</span>}
+        </span>
+      </button>
+    ))}
+  </div>
+);

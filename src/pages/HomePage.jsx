@@ -1,167 +1,150 @@
 import React from 'react';
-import { Code2, Briefcase, Mail, Download } from 'lucide-react';
+import { Mail, Github, Linkedin, ArrowRight, ArrowDownToLine, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { TypingAnimation } from '@/common/typing-animation';
-import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern';
-import { cn } from '@/lib/utils';
+
+const socialLinks = [
+  { name: 'GitHub', icon: Github, url: import.meta.env.VITE_GITHUB_URL },
+  { name: 'LinkedIn', icon: Linkedin, url: import.meta.env.VITE_LINKEDIN_URL },
+  { name: 'Email', icon: Mail, url: 'mailto:jdndirangu2020@gmail.com' },
+];
+
+// Key facts shown under the intro, sourced from the Experience and Projects sections
+const details = [
+  { label: 'Currently', value: 'Founder & Engineer', sub: 'SOLEASE', href: '#projects' },
+  { label: 'Previously', value: 'Software Developer Intern', sub: 'Enmowe Technologies', href: '#experience' },
+  { label: 'Stack', value: 'React · Node.js', sub: 'TypeScript · PostgreSQL' },
+  { label: 'Based in', value: 'Kenya', sub: 'UTC+3 · Open to remote' },
+];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+};
 
 const HomePage = () => {
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2, 
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.6, ease: "easeOut" } 
-    },
-  };
-
   return (
-    <section id="home">
-      <motion.div 
-        variants={containerVariants}
+    <section id="home" className="bg-background">
+      <motion.div
         initial="hidden"
         animate="visible"
-        className="relative bg-background flex flex-col items-center justify-center px-6 py-20 text-center transition-colors duration-300 overflow-hidden"
+        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        className="max-w-3xl mx-auto px-6 pt-36 pb-24 md:pt-44 md:pb-32"
       >
-      
-      {/* <Particles 
-        variant='snow'
-        className="absolute inset-0 z-0"
-        customOptions={{
-          particles: {
-            color: {
-              value: isDarkMode ? "#ffffff" : "#000000"
-            },
-            number: {
-              value: 500
-            },
-            move: {
-              speed: {
-                min: 2,
-                max: 4
-              },
-              // direction: "bottom",
-              // straight: "true",
-              // random: false
-            }
-          }
-        }} /> */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
-        <InteractiveGridPattern 
-          className={cn(
-            "[mask-image:radial-gradient(400px_circle_at_center,white,transparent)]",
-            "inset-x-0 inset-y-[-30%] h-[200%]"
-          )} />
-      </div>
-      
-      <div className='relative z-10 flex flex-col items-center mt-2.5'>
-        {/* Role Badge */}
-        <motion.div variants={itemVariants} className="mb-8 flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-[#111827] px-4 py-1.5 transition-all hover:bg-gray-200 dark:hover:bg-[#1a2332]">
-        <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-          <span className="text-xs font-semibold tracking-wider text-gray-600 dark:text-gray-400 uppercase">
-            Available for work
-          </span>
-        </motion.div>
-
-        {/* Hero Text */}
-        <motion.h1 variants={itemVariants} className="max-w-4xl text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-6">
-          Hello, I'm <br />
-          <span className="text-blue-500">
-            <TypingAnimation>James Daniel</TypingAnimation>
-          </span>
-        </motion.h1>
-
-        <motion.p variants={itemVariants} className="max-w-2xl text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-          Full-Stack Developer specializing in <span className="text-blue-500 font-bold">high-performance applications</span>. I bridge the 
-          gap between complex backend logic and intuitive user experiences.
-        </motion.p>
-
-        {/* Current Stack Badge */}
-        <motion.div variants={itemVariants} className="mb-10 flex flex-wrap items-center justify-center gap-3">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Tech I use</span>
-          <div className="flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">React</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Next.js</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">Node.js</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">PostgreSQL</span>
+        {/* Identity */}
+        <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-7 mb-12">
+          <img
+            src="/PASSPORTJDG.png"
+            alt="James Daniel"
+            className="h-28 w-28 sm:h-34 sm:w-34 shrink-0 rounded-full object-cover bg-muted ring-1 ring-border ring-offset-4 ring-offset-background"
+          />
+          <div className="space-y-2.5">
+            <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">James Daniel</p>
+            <p className="font-mono text-sm text-muted-foreground">
+              Full-Stack Engineer <span className="text-border">/</span> Founder @ SOLEASE
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <a
+                href="#contact"
+                className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-500/15 transition-colors"
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                </span>
+                Available for new work
+              </a>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                <MapPin size={12} />
+                Kenya · UTC+3
+              </span>
+            </div>
           </div>
         </motion.div>
 
-        {/* Action Buttons */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-4 mb-16">
-          <motion.a 
+        {/* Headline */}
+        <motion.h1
+          variants={fadeUp}
+          className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight leading-[1.1] text-foreground mb-6"
+        >
+          Full-stack engineer building reliable products,{' '}
+          <span className="text-muted-foreground">from database to interface.</span>
+        </motion.h1>
+
+        <motion.p
+          variants={fadeUp}
+          className="max-w-xl text-base md:text-lg text-muted-foreground leading-relaxed mb-10"
+        >
+          I design APIs, data models and the interfaces on top of them, and I care about clean,
+          maintainable code. Right now I'm building{' '}
+          <a
+            href="#projects"
+            className="text-foreground underline underline-offset-4 decoration-border hover:decoration-foreground transition-colors"
+          >
+            SOLEASE
+          </a>
+          , an agentic operations platform.
+        </motion.p>
+
+        {/* Actions */}
+        <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-6 gap-y-4 mb-20">
+          <a
+            href="#projects"
+            className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            View my work
+            <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+          </a>
+          <a
             href="/JAMES_DANIEL_CV.pdf"
             download="James_Daniel_CV.pdf"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 font-bold text-white transition-all hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Download size={20} />
-            Download CV
-          </motion.a>
+            <ArrowDownToLine size={15} />
+            Resume
+          </a>
 
-          {/* <motion.a 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            href='#contact'
-            className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-100 dark:hover:bg-[#232f48] text-gray-700 dark:text-white transition-all hover:shadow-lg"
-          >
-            <Mail size={20} />
-            Get in Touch
-            Get In Touch
-          </motion.a> */}
+          <span className="hidden sm:block h-4 w-px bg-border" />
 
-          <motion.a 
-            whileHover={{ scale: 1.05, x: 5 }}
-            whileTap={{ scale: 0.95 }}
-            href='#projects'
-            className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white dark:bg-[#192233] border border-gray-200 dark:border-none font-bold hover:bg-gray-100 dark:hover:bg-[#232f48] text-gray-700 dark:text-white transition-all hover:shadow-lg"
-          >
-            <Code2 size={20} />
-            View Projects
-          </motion.a>
+          <div className="flex items-center gap-1">
+            {socialLinks.map(({ name, icon: Icon, url }) => (
+              <a
+                key={name}
+                href={url}
+                target={url?.startsWith('mailto:') ? undefined : '_blank'}
+                rel="noopener noreferrer"
+                aria-label={name}
+                title={name}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Icon size={17} />
+              </a>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Divider */}
-        <motion.div 
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="w-full max-w-md h-px bg-linear-to-r from-transparent via-gray-300 dark:via-gray-800 to-transparent mb-12"
-        ></motion.div>
-
-        {/* Social Links */}
-        <motion.div variants={itemVariants} className="flex items-center gap-8 text-gray-500">
-          <motion.a whileHover={{ y: -5, color: '#3b82f6' }} href="#projects" className="transition-colors" title="Projects">
-            <Code2 size={24} />
-          </motion.a>
-          <motion.a whileHover={{ y: -5, color: '#3b82f6' }} href="#experience" className="transition-colors" title="Experience">
-            <Briefcase size={24} />
-          </motion.a>
-          <motion.a whileHover={{ y: -5, color: '#3b82f6' }} href="#contact" className="transition-colors" title="Contact">
-            <Mail size={24} />
-          </motion.a>
+        {/* Details */}
+        <motion.div
+          variants={fadeUp}
+          className="grid grid-cols-2 md:grid-cols-4 gap-px overflow-hidden rounded-xl border border-border bg-border"
+        >
+          {details.map(({ label, value, sub, href }) => {
+            const Wrapper = href ? 'a' : 'div';
+            return (
+              <Wrapper
+                key={label}
+                {...(href && { href })}
+                className="flex flex-col gap-1 bg-background p-4 sm:p-5 hover:bg-muted/40 transition-colors"
+              >
+                <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+                  {label}
+                </p>
+                <p className="text-sm font-medium text-foreground">{value}</p>
+                <p className="text-xs text-muted-foreground">{sub}</p>
+              </Wrapper>
+            );
+          })}
         </motion.div>
-      </div>
-    </motion.div>
+      </motion.div>
     </section>
   );
 };

@@ -1,198 +1,165 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+
+// Newest first
+const experiences = [
+  {
+    period: 'Mar 2026 — Now',
+    role: 'Founder & Full-Stack Product Engineer',
+    company: 'SOLEASE',
+    current: true,
+    description:
+      'Took SOLEASE from idea to a working product, owning the roadmap, architecture and release cycle while building every layer of the platform.',
+    highlights: [
+      'Built frontend, APIs, auth and database modules for user workflows, admin operations and reporting',
+      'Integrated an AI assistant and automation features for support and operational visibility',
+      'Shipped OAuth sign-in, profile management and validated upload handling',
+    ],
+    tech: ['TypeScript', 'Supabase', 'Clerk', 'Tailwind v4'],
+  },
+  {
+    period: 'Jan — Apr 2026',
+    role: 'Software Developer Intern',
+    company: 'Enmowe Technologies (now Zunu eMobility)',
+    description:
+      'Turned real user pain points in finance workflows into production-ready UX improvements, with a focus on reliable, keyboard-first interactions.',
+    highlights: [
+      'Built dependable UI behaviour for dynamic, keyboard-driven interfaces',
+      'Wrote safe, maintainable frontend logic using idempotent scripts and scoped selectors',
+      'Iterated through code review to harden edge cases and improve usability',
+    ],
+    tech: ['JavaScript', 'HTML', 'CSS'],
+  },
+  {
+    period: 'Apr — Aug 2023',
+    role: 'Software Development Attachment',
+    company: 'Ministry of ICT & the Digital Economy',
+    description:
+      'Built a web-based IT support ticketing system connecting a responsive frontend to a secure database backend for interdepartmental support.',
+    highlights: [
+      'Implemented role-based access control and secure authentication',
+      'Debugged and resolved logic bottlenecks in the service desk module',
+      'Translated stakeholder requirements into a dark-mode-ready interface',
+    ],
+    tech: ['PHP', 'MySQL', 'Bootstrap', 'AJAX'],
+  },
+];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+};
 
 const ExperiencePage = () => {
-  const experiences = [
-    {
-      company: "Ministry Of Information, Communication and The Digital Economy (MOICDE)",
-      role: "Attachment",
-      duration: "April 2023 - August 2023",
-      points: [
-        {
-          label: "End-to-End Development",
-          desc: "Developed a web-based IT Support Ticketing System, creating a seamless integration between a responsive frontend and a secure database backend."
-        },
-        {
-          label: "Server-Side Logic",
-          desc: "Implemented Role-Based Access Control (RBAC) and secure authentication workflows, resulting in improved collaboration for interdepartmental support operations."
-        },
-        {
-          label: "Problem Solving",
-          desc: "Troubleshoot and resolve critical logic bottlenecks using browser debugging tools, ensuring 99.9% uptime for the service desk module."
-        },
-        {
-          label: "Collaboration",
-          desc: "Worked closely with stakeholders to translate complex requirements into a sophisticated, dark-mode-supported user interface."
-        }
-      ]
-    },
-    {
-      company: "Enmowe Technologies -> Zunu Emobility",
-      role: "Software Developer Intern",
-      duration: "January 2026 - April 2026",
-      points: [
-        {
-          label: "Product Thinking",
-          desc: "Gained hands-on experience translating real user pain points into production-ready UX improvements for finance workflows."
-        },
-        {
-          label: "Frontend Engineering",
-          desc: "Strengthened my ability to build reliable UI behavior in dynamic interfaces, especially for keyboard-first interaction patterns."
-        },
-        {
-          label: "Problem-Solving Under Review",
-          desc: "Learned how to refine implementation details through review feedback, improving edge-case handling and solution quality."
-        },
-        {
-          label: "Code Quality Discipline",
-          desc: "Developed stronger habits around writing safe, maintainable frontend logic with idempotent script patterns and scoped selectors."
-        },
-        {
-          label: "Collaboration in Real Delivery",
-          desc: "Improved communication with reviewers and stakeholders, turning technical feedback into measurable usability improvements."
-        }
-      ]
-    },
-    {
-      company: "SOLEASE",
-      role: "Founder & Full-Stack Product Engineer",
-      duration: "March 2026 - Present",
-      points: [
-        {
-          label: "Product Ownership & Execution",
-          desc: "Conceived, built and iteratively shipped SOLEASE from idea to working product, owning roadmap decisions, architecture and release cycles."
-        },
-        {
-          label: "End-to-End Engineering",
-          desc: "Developed the platform across frontend, backend APIs, authentication and database systems, delivering core modules for user workflows, admin operations and reporting."
-        },
-        {
-          label: "AI & Automation",
-          desc: "Integrated AI assistant/chat capabilities and automation-focused features to improve user support, productivity and operational visibility."
-        },
-        {
-          label: "Security & Indentity",
-          desc: "Implemented secure authentication flows (including OAuth providers), profile management and robust upload handling with improved validation and lifecycle controls."
-        },
-        {
-          label: "UX, Growth & Iteration",
-          desc: "Led continuous UI/UX refinements, role-based experience improvements and versioned updates based on testing, usage behavior and product goals."
-        },
-        // {
-        //   label: "Founder Impact",
-        //   desc: "Managed both technical delivery and startup momentum — balancing product development, troubleshooting, infrastructure decisions and go-to-market readiness."
-        // }
-      ]
-    }
-  ];
+  const timelineRef = useRef(null);
 
-  // Animation Variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { duration: 0.5, ease: "easeOut" } 
-    }
-  };
+  // Progress through the timeline drives the line fill and the glowing dot
+  const { scrollYProgress } = useScroll({
+    target: timelineRef,
+    offset: ['start 65%', 'end 50%'],
+  });
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24 });
+  const dotTop = useTransform(progress, [0, 1], ['0%', '100%']);
 
   return (
-    <section id="experience" className="bg-background text-foreground px-6 py-20 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* Section Heading */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+    <section id="experience" className="relative bg-background text-foreground px-6 py-24 md:py-32 overflow-hidden">
+      <div className="max-w-5xl mx-auto">
+
+        {/* Heading */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true }}
-          className="mb-16"
+          variants={fadeUp}
+          className="text-center mb-16 md:mb-20"
         >
-          <h2 className="text-center text-3xl md:text-4xl font-bold text-foreground mb-4 uppercase tracking-tight">
-            Experience
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
+            Where it all started
+          </p>
+          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-wide">
+            Engineered{' '}
+            <span className="italic bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600 dark:from-sky-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent pr-1">
+              Growth
+            </span>
           </h2>
-          <motion.div 
-            initial={{ width: 0 }}
-            whileInView={{ width: "100px" }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="h-1 bg-brand mx-auto rounded-full"
-          ></motion.div>
         </motion.div>
 
-        {/* Timeline Container */}
-        <div className="relative">
-          {/* Animated Vertical Line */}
-          <motion.div 
-            initial={{ height: 0 }}
-            whileInView={{ height: "100%" }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            className="absolute left-1 top-2 w-px bg-gray-200 dark:bg-[#232f48] origin-top"
-          ></motion.div>
+        {/* Timeline */}
+        <div ref={timelineRef} className="relative flex gap-6 md:gap-14">
 
-          <div className="space-y-16">
-            {experiences.map((exp, index) => (
-              <motion.div 
-                key={index}
-                variants={containerVariants}
+          {/* Rail: faint base line, gradient fill and a dot that track scroll */}
+          <div className="relative w-3 shrink-0 flex justify-center">
+            <div className="absolute inset-y-0 w-px bg-border" />
+            <motion.div
+              style={{ scaleY: progress }}
+              className="absolute inset-y-0 w-[2px] origin-top rounded-full bg-linear-to-b from-cyan-400 via-sky-500 to-brand"
+            />
+            <motion.div
+              style={{ top: dotTop }}
+              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+            >
+              <span className="absolute h-12 w-12 rounded-full bg-cyan-500/25 blur-md" />
+              <span className="relative h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#38bdf8]" />
+            </motion.div>
+          </div>
+
+          {/* Entries */}
+          <div className="flex-1 divide-y divide-border">
+            {experiences.map((exp) => (
+              <motion.article
+                key={exp.company}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                className="relative pl-10"
+                viewport={{ once: true, margin: '-80px' }}
+                variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                className="grid md:grid-cols-[0.9fr_1.1fr] gap-5 md:gap-10 py-10 first:pt-0 last:pb-0"
               >
-                
-                {/* Timeline Dot with Glow */}
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-                  className="absolute left-0 top-2 z-10 h-3 w-3 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)] border-2 border-white dark:border-[oklch(0.13_0.028_261.692)]"
-                ></motion.div>
-
-                {/* Experience Header */}
-                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                      {exp.role}
-                    </h3>
-                    <p className="text-blue-600 dark:text-blue-400 font-bold italic text-lg">
-                      {exp.company}
-                    </p>
+                {/* Left: period, role, company */}
+                <motion.div variants={fadeUp}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">
+                      {exp.period}
+                    </span>
+                    {exp.current && (
+                      <span className="flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-green-600 dark:text-green-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                        Current
+                      </span>
+                    )}
                   </div>
-                  <motion.span 
-                    whileHover={{ scale: 1.05 }}
-                    className="inline-block px-4 py-1 text-sm font-bold rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 w-fit"
-                  >
-                    {exp.duration}
-                  </motion.span>
+                  <h3 className="text-xl md:text-2xl font-semibold leading-snug text-foreground">
+                    {exp.role}
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-cyan-600 dark:text-cyan-400">
+                    {exp.company}
+                  </p>
                 </motion.div>
 
-                {/* Responsibility Details */}
-                <div className="space-y-6">
-                  {exp.points.map((point, i) => (
-                    <motion.div 
-                      key={i} 
-                      variants={itemVariants}
-                      className="group"
-                    >
-                      <h4 className="text-slate-800 dark:text-gray-200 font-bold text-base md:text-lg mb-1 group-hover:text-blue-500 transition-colors">
-                        {point.label}:
-                      </h4>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm md:text-base max-w-3xl">
-                        {point.desc}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
+                {/* Right: summary, highlights, tech */}
+                <motion.div variants={fadeUp} className="space-y-4">
+                  <p className="text-sm md:text-base leading-relaxed text-muted-foreground">
+                    {exp.description}
+                  </p>
+                  <ul className="space-y-2">
+                    {exp.highlights.map((item) => (
+                      <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-cyan-500" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="flex flex-wrap gap-2 pt-1">
+                    {exp.tech.map((t) => (
+                      <li
+                        key={t}
+                        className="rounded-md border border-border bg-card/50 px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
+                      >
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </motion.article>
             ))}
           </div>
         </div>

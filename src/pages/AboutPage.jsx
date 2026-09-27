@@ -1,150 +1,200 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  SiReact, SiJavascript, SiTypescript, SiTailwindcss, 
-  SiNodedotjs, SiPython, SiPostgresql,
-  SiGithub, SiFigma, SiVite, SiExpress, SiNextdotjs,
-  SiMongodb, SiMysql, SiCanva,
-  SiSupabase, SiDocker, SiPostman
+import { Code2, Layers, Target, Rocket, Sparkles } from 'lucide-react';
+import {
+  SiReact, SiJavascript, SiTypescript, SiTailwindcss, SiNextdotjs, SiFramer,
+  SiNodedotjs, SiExpress, SiPython, SiPhp,
+  SiPostgresql, SiSupabase, SiMongodb, SiMysql, SiFirebase,
+  SiGithub, SiDocker, SiVercel, SiPostman, SiVite, SiFigma,
 } from 'react-icons/si';
+import { cn } from '@/lib/utils';
 
-const techMarqueeItems = [
-  { name: 'React.js', icon: SiReact, color: '#61DAFB' },
-  { name: 'Next.js', icon: SiNextdotjs, color: '#000000' },
-  { name: 'TypeScript', icon: SiTypescript, color: '#3178C6' },
-  { name: 'Tailwind CSS', icon: SiTailwindcss, color: '#06B6D4' },
-  { name: 'JavaScript', icon: SiJavascript, color: '#F7DF1E' },
-  { name: 'Node.js', icon: SiNodedotjs, color: '#339933' },
-  { name: 'Express.js', icon: SiExpress, color: '#000000' },
-  { name: 'MongoDB', icon: SiMongodb, color: '#47A248' },
-  { name: 'PostgreSQL', icon: SiPostgresql, color: '#4169E1' },
-  { name: 'Supabase', icon: SiSupabase, color: '#3ECF8E' },
-  { name: 'MySQL', icon: SiMysql, color: '#4479A1' },
-  { name: 'Python', icon: SiPython, color: '#3776AB' },
-  { name: 'GitHub', icon: SiGithub, color: '#181717' },
-  { name: 'Postman', icon: SiPostman, color: '#FF6C35' },
-  { name: 'Figma', icon: SiFigma, color: '#F24E1E' },
-  { name: 'Canva', icon: SiCanva, color: '#00C4CC' },
-  { name: 'Cursor AI', icon: SiVite, color: '#000000' },
-  { name: 'Vite', icon: SiVite, color: '#646CFF' },
-  { name: 'Docker', icon: SiDocker, color: '#2496ED' },
+const principles = [
+  {
+    icon: Code2,
+    title: 'Clean, maintainable code',
+    desc: 'Readable code with clear boundaries, so products stay easy to build on and improve.',
+  },
+  {
+    icon: Layers,
+    title: 'End-to-end ownership',
+    desc: 'From data models and APIs to auth and the interface, I take features across the whole stack.',
+  },
+  {
+    icon: Target,
+    title: 'Product-minded',
+    desc: 'I start from real user pain points and balance a polished UX with a sound architecture.',
+  },
+  {
+    icon: Rocket,
+    title: 'Ship, then iterate',
+    desc: 'Release early, learn from review and usage, and refine edge cases until it feels right.',
+  },
 ];
 
-const MarqueeItem = ({ item }) => {
-  const Icon = item.icon;
-  return (
-    <div className="relative group flex flex-col items-center justify-center mx-1 sm:mx-2 md:mx-3">
-      <span className="absolute -top-4 sm:-top-5 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold text-gray-600 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-white dark:bg-[#1a1a2e] px-2 py-0.5 rounded-md shadow-md border border-gray-200 dark:border-gray-700 z-10">
-        {item.name}
-      </span>
-      <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 transition-all p-1.5 sm:p-2">
-        <Icon size={24} sm:size={26} md:size={30} style={{ color: item.color, fill: item.color }} />
-      </div>
-    </div>
-  );
+// `color` is the brand color shown on hover; omitted for monochrome logos
+const stackGroups = [
+  {
+    label: 'Frontend',
+    items: [
+      { name: 'React', icon: SiReact, color: '#61DAFB' },
+      { name: 'Next.js', icon: SiNextdotjs },
+      { name: 'TypeScript', icon: SiTypescript, color: '#3178C6' },
+      { name: 'JavaScript', icon: SiJavascript, color: '#F7DF1E' },
+      { name: 'Tailwind CSS', icon: SiTailwindcss, color: '#06B6D4' },
+      { name: 'Framer Motion', icon: SiFramer, color: '#0055FF' },
+    ],
+  },
+  {
+    label: 'Backend',
+    items: [
+      { name: 'Node.js', icon: SiNodedotjs, color: '#5FA04E' },
+      { name: 'Express', icon: SiExpress },
+      { name: 'Python', icon: SiPython, color: '#3776AB' },
+      { name: 'PHP', icon: SiPhp, color: '#777BB4' },
+    ],
+  },
+  {
+    label: 'Data',
+    items: [
+      { name: 'PostgreSQL', icon: SiPostgresql, color: '#4169E1' },
+      { name: 'Supabase', icon: SiSupabase, color: '#3ECF8E' },
+      { name: 'MongoDB', icon: SiMongodb, color: '#47A248' },
+      { name: 'MySQL', icon: SiMysql, color: '#4479A1' },
+      { name: 'Firebase', icon: SiFirebase, color: '#FFCA28' },
+    ],
+  },
+  {
+    label: 'Tooling',
+    items: [
+      { name: 'GitHub', icon: SiGithub },
+      { name: 'Docker', icon: SiDocker, color: '#2496ED' },
+      { name: 'Vercel', icon: SiVercel },
+      { name: 'Postman', icon: SiPostman, color: '#FF6C37' },
+      { name: 'Vite', icon: SiVite, color: '#646CFF' },
+      { name: 'Figma', icon: SiFigma, color: '#F24E1E' },
+      { name: 'Cursor AI', icon: Sparkles },
+    ],
+  },
+];
+
+// Sponsor-style logo strip. The list is rendered twice so the loop is seamless;
+// hovering pauses it and reveals each logo's brand color.
+const Marquee = ({ items, duration = 40, reverse = false }) => (
+  <div
+    style={{ '--duration': `${duration}s` }}
+    className="group flex overflow-hidden [--gap:3rem] gap-(--gap) [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+  >
+    {[0, 1].map((copy) => (
+      <ul
+        key={copy}
+        aria-hidden={copy === 1 ? true : undefined}
+        className={cn(
+          'flex shrink-0 items-center gap-(--gap) animate-marquee group-hover:[animation-play-state:paused] motion-reduce:animate-none',
+          reverse && '[animation-direction:reverse]'
+        )}
+      >
+        {items.map(({ name, icon: Icon, color }) => (
+          <li
+            key={name}
+            style={color ? { '--brand-color': color } : undefined}
+            className="group/logo flex items-center gap-2.5 text-muted-foreground opacity-70 hover:opacity-100 hover:text-foreground transition"
+          >
+            <Icon
+              size={26}
+              className={color ? 'transition-colors group-hover/logo:text-(--brand-color)' : undefined}
+            />
+            <span className="text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">{name}</span>
+          </li>
+        ))}
+      </ul>
+    ))}
+  </div>
+);
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
 
+const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
+
+const inView = { initial: 'hidden', whileInView: 'visible', viewport: { once: true, margin: '-80px' } };
+
 const AboutPage = () => {
-  const fadeInVariant = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.8, ease: "easeOut" } 
-    }
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }
-    }
-  };
-
   return (
-    <section id="about" className="bg-background text-foreground px-6 pt-20 md:pt-32 pb-0 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* Section Heading */}
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeInVariant}
-          className="mb-16"
-        >
-          <h2 className="text-center text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 uppercase">About Me</h2>
-          <motion.div 
-            initial={{ width: 0 }}
-            whileInView={{ width: "100px" }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="h-1 bg-brand mx-auto rounded-full"
-          ></motion.div>
-        </motion.div>
+    <section id="about" className="bg-background text-foreground px-6 py-24 md:py-32">
+      <div className="max-w-5xl mx-auto">
 
-        {/* Biography Content */}
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={containerVariants}
-          className="space-y-6 text-lg leading-relaxed mb-20"
-        >
-          <motion.p variants={fadeInVariant} className='text-muted-foreground'>
-            I am a self-motivated <span className="text-foreground font-semibold underline underline-offset-4 decoration-brand/30">Full-Stack Developer</span> dedicated 
-            to the craft of building seamless, high-performance web applications. My approach to engineering 
-            is driven by a core principle: I focus on writing clean, maintainable and readable code that makes 
-            building and improving products feel smooth and enjoyable.
-          </motion.p>
-
-          <motion.p variants={fadeInVariant} className='text-muted-foreground'>
-            I believe that great software is defined by the balance between a polished user experience and a 
-            robust, scalable architecture. My technical journey is centered on mastering the modern web 
-            stack, leveraging tools like <span className="text-foreground font-semibold">React.js, Tailwind CSS, Node.js, and Python</span> to 
-            transform complex requirements into intuitive digital solutions.
-          </motion.p>
-        </motion.div>
-
-        {/* Core Technologies Marquee */}
-        <div className="mb-12 sm:mb-16 md:mb-20">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-8"
-          >
-            <h3 className="text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.25em] text-muted-foreground uppercase">
-              Core Technologies
-            </h3>
-            <motion.div 
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              transition={{ duration: 1 }}
-              className="h-px grow bg-linear-to-r from-border to-transparent origin-left"
-            ></motion.div>
+        {/* Heading + bio */}
+        <motion.div {...inView} variants={stagger} className="grid md:grid-cols-[1fr_1.3fr] gap-8 md:gap-16 mb-20">
+          <motion.div variants={fadeUp}>
+            <p className="font-mono text-xs uppercase tracking-wider text-brand mb-4">01 — About</p>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">
+              Engineering with the product in mind.
+            </h2>
           </motion.div>
 
-          <div className="relative overflow-hidden">
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-background to-transparent"></div>
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-background to-transparent"></div>
+          <motion.div variants={fadeUp} className="space-y-5 text-base md:text-lg leading-relaxed text-muted-foreground">
+            <p>
+              I'm a <span className="text-foreground font-medium">Full-Stack Engineer</span> who
+              enjoys the whole journey of a product: shaping the data model, designing the API and
+              crafting an interface people actually like using.
+            </p>
+            <p>
+              I started out building an IT support ticketing system with PHP and MySQL at the
+              Ministry of ICT, then sharpened my frontend engineering on finance workflows at Enmowe
+              Technologies. Today I'm founding{' '}
+              <span className="text-foreground font-medium">SOLEASE</span>, where I own everything
+              from architecture and auth to AI features and releases.
+            </p>
+          </motion.div>
+        </motion.div>
 
-            <motion.div 
-              className="flex py-2 sm:py-4"
-              initial={{ x: 0 }}
-              animate={{ x: "-33.33%" }}
-              transition={{ 
-                duration: 19 * 0.4, 
-                repeat: Infinity, 
-                ease: "linear" 
-              }}
-            >
-              {[...techMarqueeItems, ...techMarqueeItems, ...techMarqueeItems].map((item, idx) => (
-                <MarqueeItem key={`${item.name}-${idx}`} item={item} />
-              ))}
-            </motion.div>
+        {/* Principles */}
+        <motion.div {...inView} variants={stagger} className="mb-20">
+          <motion.p variants={fadeUp} className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-6">
+            How I work
+          </motion.p>
+          <div className="grid sm:grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
+            {principles.map(({ icon: Icon, title, desc }) => (
+              <motion.div
+                key={title}
+                variants={fadeUp}
+                className="group bg-background p-6 md:p-8 hover:bg-muted/40 transition-colors"
+              >
+                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground group-hover:text-brand group-hover:border-brand/40 transition-colors">
+                  <Icon size={18} />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-2">{title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
+
+        {/* Stack */}
+        <motion.div {...inView} variants={stagger}>
+          <motion.p variants={fadeUp} className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-6">
+            Tools &amp; technologies
+          </motion.p>
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl border border-border bg-card/30 py-8 md:py-10 space-y-6 md:space-y-8"
+          >
+            <Marquee items={[...stackGroups[0].items, ...stackGroups[1].items]} duration={45} />
+            <Marquee items={[...stackGroups[2].items, ...stackGroups[3].items]} duration={50} reverse />
+
+            {/* Category legend */}
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 px-6 pt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              {stackGroups.map(({ label, items }) => (
+                <li key={label}>
+                  {label} <span className="text-foreground">{items.length}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </motion.div>
 
       </div>
     </section>

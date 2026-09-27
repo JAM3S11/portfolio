@@ -1,332 +1,439 @@
-import React, { useState } from 'react';
-import { Github, ExternalLink, Pin, SignalMedium, Code2, Server, Layers, FileCode, BookOpen } from 'lucide-react';
-import { MdElectricBolt } from "react-icons/md";
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { Github, ArrowUpRight, ArrowRight, Code2, Server, Layers, FileCode, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import { cn } from '@/lib/utils';
+
+const categories = [
+  { id: 'all', label: 'All' },
+  { id: 'fullstack', label: 'Full-Stack' },
+  { id: 'frontend', label: 'Frontend' },
+  { id: 'backend', label: 'Backend' },
+];
+
+const categoryMeta = {
+  fullstack: { label: 'Full-Stack', icon: Layers },
+  frontend: { label: 'Frontend', icon: Code2 },
+  backend: { label: 'Backend', icon: Server },
+};
+
+const statusStyles = {
+  Live: 'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400',
+  Building: 'border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400',
+  'In progress': 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  Archived: 'border-border bg-muted text-muted-foreground',
+};
+
+// Curated order: flagship first. `github`/`live` are null when there is nothing public to link.
+const projects = [
+  {
+    title: 'SOLEASE',
+    tagline: 'Engineering operations platform',
+    description:
+      'An engineering operations platform I founded and build end to end, now being rebuilt as an agentic operating system for teams.',
+    highlights: [
+      'AI assistant and automation for support and operational visibility',
+      'OAuth sign-in, profiles and role-based experiences',
+      'Admin operations and reporting modules',
+    ],
+    tech: ['TypeScript', 'Supabase', 'Clerk', 'Tailwind v4'],
+    github: 'https://github.com/JAM3S11/solease.git',
+    live: null,
+    image: 'https://ik.imagekit.io/jimdanliveurl/solease.png',
+    status: 'Building',
+    category: 'fullstack',
+    hasTests: true,
+    hasDocs: true,
+  },
+  {
+    title: 'EntryWave',
+    tagline: 'Event experience portal',
+    description:
+      'More than an invitation: a full event experience portal designed for the Kenyan market and the flagship of a longer-term EntryWave platform.',
+    highlights: [
+      'Immersive, interactive experience for modern celebrations',
+      'Node.js and Firebase backend for event data',
+      'Test coverage on core flows',
+    ],
+    tech: ['TypeScript', 'Tailwind', 'Node.js', 'Firebase'],
+    github: 'https://github.com/JAM3S11/entrywave.git',
+    live: 'https://entrywave.vercel.app',
+    image: 'https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-06-13%20224656.png',
+    status: 'Live',
+    category: 'fullstack',
+    hasTests: true,
+    hasDocs: false,
+  },
+  {
+    title: 'Greatwall',
+    tagline: 'AI × Web3 energy protocol',
+    description:
+      'A sovereign energy protocol merging AI and Web3 to decentralise the power grid and bring transparency to the Kenyan energy sector.',
+    highlights: [
+      'Web3.js integration for on-chain transparency',
+      'AI-driven view of grid efficiency',
+      'Animated, responsive product site',
+    ],
+    tech: ['React', 'Tailwind', 'Headless UI', 'Framer Motion', 'Web3.js'],
+    github: 'https://github.com/JAM3S11/greatwall.git',
+    live: 'https://greatwallhub.vercel.app/',
+    image: 'https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20210209.png',
+    status: 'In progress',
+    category: 'fullstack',
+    hasTests: false,
+    hasDocs: false,
+  },
+  {
+    title: 'Wantach Workflow',
+    tagline: 'n8n-style automation diagram',
+    description:
+      'An interactive, n8n-style workflow diagram of the end-to-end business registration process for RegEase Kenya.',
+    highlights: [
+      'Maps client intake and document validation',
+      'Visualises government portal integration',
+      'Covers payment automation end to end',
+    ],
+    tech: ['Next.js 14', 'TypeScript', 'Tailwind CSS', 'Lucide React'],
+    github: 'https://github.com/JAM3S11/regease-workflow.git',
+    live: 'https://wantach-workflow.vercel.app',
+    image: 'https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20212549.png',
+    status: 'Live',
+    category: 'frontend',
+    hasTests: false,
+    hasDocs: false,
+  },
+  {
+    title: 'Open Weather',
+    tagline: 'Real-time weather dashboard',
+    description:
+      'A real-time weather app built on a REST API, focused on accurate data and clean, readable visualisation.',
+    highlights: [
+      'Live data fetched from the OpenWeather REST API',
+      'Accessible UI components with Headless UI',
+      'Clear, glanceable data layout',
+    ],
+    tech: ['React', 'Tailwind', 'Headless UI', 'Axios'],
+    github: null,
+    live: 'https://openweatherapidemo.vercel.app/',
+    image: 'https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20154823.png',
+    status: 'Live',
+    category: 'frontend',
+    hasTests: false,
+    hasDocs: false,
+  },
+  {
+    title: 'Franatech',
+    tagline: 'Corporate landing page',
+    description:
+      'A professional landing page for a technical services company, built for conversion and fast, responsive performance.',
+    highlights: [
+      'Conversion-focused layout and messaging',
+      'Fully responsive across devices',
+      'Lightweight vanilla HTML, CSS and JavaScript',
+    ],
+    tech: ['HTML', 'CSS', 'JavaScript'],
+    github: 'https://github.com/JAM3S11/franatech-website-template.git',
+    live: 'https://franatech-website-template.vercel.app/',
+    image: 'https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20210031.png',
+    status: 'Live',
+    category: 'frontend',
+    hasTests: false,
+    hasDocs: false,
+  },
+  {
+    title: 'eTicketing',
+    tagline: 'IT service desk platform',
+    description:
+      'A server-side IT support system that streamlines the ticket lifecycle and collaboration between departments.',
+    highlights: [
+      'End-to-end ticket lifecycle management',
+      'Role-based access control and secure authentication',
+      'AJAX-driven updates without page reloads',
+    ],
+    tech: ['PHP', 'MySQL', 'Bootstrap', 'AJAX'],
+    github: 'https://github.com/JAM3S11/eticketing.git',
+    live: null,
+    image: null,
+    status: 'Archived',
+    category: 'backend',
+    hasTests: false,
+    hasDocs: false,
+  },
+];
+
+const countFor = (id) => (id === 'all' ? projects.length : projects.filter((p) => p.category === id).length);
+
+const ProjectDetails = ({ project }) => {
+  const { icon: Icon, label } = categoryMeta[project.category];
+
+  return (
+    <motion.div
+      key={project.title}
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 12 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className="space-y-6"
+    >
+      <div>
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-medium', statusStyles[project.status])}>
+            {project.status}
+          </span>
+          <span className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <Icon size={12} />
+            {label}
+          </span>
+        </div>
+        <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{project.title}</h3>
+        <p className="mt-1 text-sm font-medium text-cyan-600 dark:text-cyan-400">{project.tagline}</p>
+      </div>
+
+      <p className="text-sm md:text-base leading-relaxed text-muted-foreground">{project.description}</p>
+
+      <div className="space-y-2.5">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Highlights</p>
+        {project.highlights.map((item) => (
+          <div key={item} className="flex items-start gap-2.5 text-sm text-foreground/90">
+            <ArrowRight size={14} className="mt-0.5 shrink-0 text-cyan-500" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {project.tech.map((t) => (
+          <span key={t} className="rounded-full border border-border bg-card/60 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+            {t}
+          </span>
+        ))}
+        {project.hasTests && (
+          <span className="flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-[11px] font-medium text-green-600 dark:text-green-400">
+            <FileCode size={12} /> Tests
+          </span>
+        )}
+        {project.hasDocs && (
+          <span className="flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-[11px] font-medium text-purple-600 dark:text-purple-400">
+            <BookOpen size={12} /> Docs
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        {project.live && (
+          <a
+            href={project.live}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-brand hover:text-white transition-colors"
+          >
+            Live demo
+            <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </a>
+        )}
+        {project.github && (
+          <a
+            href={project.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:border-brand/50 transition-colors"
+          >
+            <Github size={15} />
+            Source
+          </a>
+        )}
+        {!project.live && !project.github && (
+          <span className="text-sm text-muted-foreground">Private project</span>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+const ProjectCard = ({ project, selected, wide, onSelect, cardRef }) => (
+  <motion.button
+    ref={cardRef}
+    type="button"
+    layout
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3 }}
+    onClick={onSelect}
+    aria-pressed={selected}
+    aria-label={`Show details for ${project.title}`}
+    className={cn(
+      'group relative overflow-hidden rounded-2xl border text-left bg-card transition-[border-color,box-shadow,opacity] duration-300',
+      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+      wide ? 'sm:col-span-2 aspect-[16/8]' : 'aspect-[16/11]',
+      selected
+        ? 'border-cyan-500/60 shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_12px_40px_-12px_rgba(56,189,248,0.45)]'
+        : 'border-border opacity-70 hover:opacity-100 hover:border-foreground/20'
+    )}
+  >
+    {project.image ? (
+      <img
+        src={project.image}
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+      />
+    ) : (
+      <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-muted to-background">
+        <span className="font-mono text-2xl font-bold tracking-tight text-muted-foreground/60">{project.title}</span>
+      </div>
+    )}
+
+    {/* Caption */}
+    <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 via-black/40 to-transparent p-4 pt-10">
+      <p className="text-sm font-semibold text-white">{project.title}</p>
+      <p className="text-xs text-white/70">{project.tagline}</p>
+    </div>
+
+    {selected && (
+      <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#38bdf8]" />
+    )}
+  </motion.button>
+);
 
 const ProjectsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [selectedTitle, setSelectedTitle] = useState(projects[0].title);
 
-  const categories = [
-    { id: 'all', label: 'All', icon: Layers },
-    { id: 'frontend', label: 'Frontend', icon: Code2 },
-    { id: 'backend', label: 'Backend', icon: Server },
-    { id: 'fullstack', label: 'Full-Stack', icon: Layers },
-  ];
+  const railRef = useRef(null);
+  const detailsRef = useRef(null);
+  const cardRefs = useRef({});
 
-  const projects = [
-    {
-        title: "Franatech Website",
-        description: "A professional corporate landing page designed for technical services, focusing on conversion-driven UI and seamless responsive performance.",
-        tech: ["HTML", "CSS", "Javascript"],
-        github: "https://github.com/JAM3S11/franatech-website-template.git",
-        live: "https://franatech-website-template.vercel.app/",
-        image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20210031.png",
-        imageText: "Franatech",
-        imageSubtext: "Modern website illustration",
-        accentColor: "text-emerald-400",
-        status: "Completed",
-        category: "frontend",
-        hasTests: false,
-        hasDocs: false
-      },
-    {
-        title: "Open Weather Demo",
-        description: "A real-time weather tracking application utilizing RESTful APIs to deliver accurate meteorological data with a focus on clean data visualization.",
-        tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Axios"],
-        github: "https://openweatherapidemo.vercel.app/",
-        live: "https://openweatherapidemo.vercel.app/",
-        image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20154823.png",
-        imageText: "Open Weather Demo",
-        imageSubtext: "REST API Integration",
-        accentColor: "text-emerald-400",
-        status: "Completed",
-        category: "frontend",
-        hasTests: false,
-        hasDocs: false
-      },
-    {
-        title: "Greatwall",
-        description: "A sovereign energy protocol merging AI and Web3 to decentralize the power grid, enhancing transparency and efficiency in the Kenyan energy sector.",
-        tech: ["React", "Tailwind", "Headless UI", "Lucide React", "Framer Motion", "Web3.js"],
-        github: "https://github.com/JAM3S11/greatwall.git",
-        live: "https://greatwallhub.vercel.app/",
-        image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20210209.png",
-        imageText: "Greatwall",
-        imageSubtext: "Next-generation energy protocol",
-        accentColor: "text-emerald-400",
-        status: "InProgress",
-        category: "fullstack",
-        hasTests: false,
-        hasDocs: false
-      },
-    {
-        title: "SOLEASE",
-        description: "Currently being revamping to an agentic operating system...",
-        tech: [
-          "Typescript", "Supabase", "Clerk", "Tailwind v4",
-        ],
-        github: "https://github.com/JAM3S11/solease.git",
-        live: "#",
-        image: "https://ik.imagekit.io/jimdanliveurl/solease.png",
-        imageText: "SOLEASE",
-        imageSubtext: "Engineering Operation Platform",
-        accentColor: "text-emerald-400",
-        status: "Building",
-        category: "fullstack",
-        hasTests: true,
-        hasDocs: true
-      },
-    {
-        title: "eticketing",
-        description: "A server-side IT support management system built with PHP and MySQL, streamlining ticket lifecycle management and inter-departmental collaboration.",
-        tech: ["PHP", "MySQL", "CSS", "Bootstrap", "AJAX"],
-        github: "https://github.com/JAM3S11/eticketing.git",
-        live: "#",
-        image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-01-06%20160745.png",
-        imageText: "ETICKETING",
-        imageSubtext: "IT Service Platform",
-        accentColor: "text-emerald-400",
-        status: "Completed",
-        category: "backend",
-        hasTests: false,
-        hasDocs: false
-      },
-    {
-       title: "WANTACH WORKFLOW ILLUSTRATION",
-       description: "An n8n-style automation workflow diagram built with Next.js 14, TypeScript, and Tailwind CSS. This project visualizes the end-to-end registration process for RegEase Kenya, including client intake, document validation, government portal integration and payment automation",
-       tech: ["Typescript", "Tailwind CSS", "Lucide React", "React-Router"],
-       github: "https://github.com/JAM3S11/regease-workflow.git",
-       live: "https://wantach-workflow.vercel.app",
-       image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-04-18%20212549.png",
-       imageText: "WANTACH WORKFLOW ILLUSTRATION",
-       imageSubtext: "An n8n-style automation workflow",
-       accentColor: "text-emerald-400",
-       status: "n8n Workflow Illustrator",
-       category: "frontend",
-       hasTests: false,
-       hasDocs: false
-      },
-    {
-      title: "EntryWave",
-      description: "EntryWave is more than an invitation — it’s a full-featured event experience portal. It serves as the flagship implementation of a long-term entrywave infrastructure, merging the  initial ideation for the Kenyan market and elevating it into a highly immersive, interactive tool for modern celebrations.",
-      tech: ["Typescript", "Tailwind", "Node.Js", "Firebase"],
-      github: "https://github.com/JAM3S11/entrywave.git",
-      live: "https://entrywave.vercel.app",
-      image: "https://ik.imagekit.io/jimdanliveurl/Screenshot%202026-06-13%20224656.png",
-      imageText: "ENTRYWAVE",
-      imageSubtext: "Initial EntryWave ideation plan",
-      accentColor: "text-emerald-400",
-      status: "More coming",
-      category: "fullstack",
-      hasTests: true,
-      hasDocs: false
-    }
-  ];
+  // Rail dot position (px from top of the rail), eased with a spring
+  const dotTarget = useMotionValue(0);
+  const dotY = useSpring(dotTarget, { stiffness: 220, damping: 28 });
 
-  const filteredProjects = activeFilter === 'all' 
-    ? projects 
-    : projects.filter(p => p.category === activeFilter);
+  const filtered = activeFilter === 'all' ? projects : projects.filter((p) => p.category === activeFilter);
+  const selected = projects.find((p) => p.title === selectedTitle);
 
-  // Animation Variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }
-    }
+  // Keep the glowing dot level with the selected card
+  useLayoutEffect(() => {
+    const align = () => {
+      const card = cardRefs.current[selectedTitle];
+      const rail = railRef.current;
+      if (!card || !rail) return;
+      const c = card.getBoundingClientRect();
+      const r = rail.getBoundingClientRect();
+      dotTarget.set(c.top - r.top + c.height / 2);
+    };
+    align();
+    // Re-align once the grid's layout animation has settled
+    const timer = setTimeout(align, 350);
+    window.addEventListener('resize', align);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', align);
+    };
+  }, [selectedTitle, activeFilter, dotTarget]);
+
+  const handleFilter = (id) => {
+    setActiveFilter(id);
+    const next = id === 'all' ? projects : projects.filter((p) => p.category === id);
+    if (!next.some((p) => p.title === selectedTitle)) setSelectedTitle(next[0].title);
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 30, scale: 0.95 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: { duration: 0.5, ease: "easeOut" } 
+  const handleSelect = (title) => {
+    setSelectedTitle(title);
+    // On stacked layouts the details sit above the grid, so bring them into view
+    if (window.innerWidth < 1024) {
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   return (
-    <section id="projects" className='bg-background text-foreground px-6 py-20 transition-colors duration-300'>
-      <div className='max-w-6xl mx-auto'>
+    <section id="projects" className="bg-background text-foreground px-6 py-24 md:py-32">
+      <div className="max-w-6xl mx-auto">
 
-        {/* Section Heading */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
+        {/* Heading */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className='mb-8 sm:mb-12'
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10"
         >
-          <h2 className='text-center text-2xl sm:text-3xl md:text-4xl font-bold text-foreground uppercase tracking-tight mb-4'>
-            Projects
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
+            Where ideas become systems
+          </p>
+          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-wide">
+            Product{' '}
+            <span className="italic bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600 dark:from-sky-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent pr-1">
+              Builds
+            </span>
           </h2>
-<motion.div 
-              initial={{ width: 0 }}
-              whileInView={{ width: "80px" }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className='h-1 bg-brand mx-auto rounded-full w-16 sm:w-24 md:w-28'
-          ></motion.div>
         </motion.div>
 
-        {/* Category Filters */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className='flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12'
-        >
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isActive = activeFilter === cat.id;
-            return (
-              <motion.button
-                key={cat.id}
-                onClick={() => setActiveFilter(cat.id)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all ${
-                  isActive 
-                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' 
-                    : 'bg-gray-100 dark:bg-[#111827] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#1a2332] border border-gray-200 dark:border-gray-800'
-                }`}
-              >
-                <Icon size={16} />
-                {cat.label}
-                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
-                  isActive ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'
-                }`}>
-                  {cat.id === 'all' ? projects.length : projects.filter(p => p.category === cat.id).length}
-                </span>
-              </motion.button>
-            );
-          })}
-        </motion.div>
+        {/* Filters */}
+        <div className="flex justify-center mb-12 md:mb-16">
+          <div role="tablist" aria-label="Filter projects" className="isolate inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+            {categories.map((cat) => {
+              const isActive = activeFilter === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => handleFilter(cat.id)}
+                  className={cn(
+                    'relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                    isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="project-filter"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      className="absolute inset-0 -z-10 rounded-full bg-background shadow-sm ring-1 ring-border"
+                    />
+                  )}
+                  {cat.label}
+                  <span className="font-mono text-[11px] text-muted-foreground">{countFor(cat.id)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* Projects Grid */}
-        <motion.div 
-          key={activeFilter}
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8'
-        >
-          {filteredProjects.map((project, index) => {
-            const displayedTech = project.tech.slice(0, 5);
-            const remainingCount = project.tech.length - 5;
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6">
 
-            return (
-              <motion.div 
-                key={index} 
-                variants={cardVariants}
-                whileHover={{ y: -10 }}
-                className='flex flex-col rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111827]/50 overflow-hidden hover:border-blue-500/50 transition-all duration-300 group shadow-sm hover:shadow-2xl hover:shadow-blue-500/10'
-              >
-{/* Image preview */}
-                  <div className={`relative h-40 sm:h-44 md:h-48 lg:h-52 overflow-hidden border-b border-gray-200 dark:border-gray-800 ${project.title === 'eticketing' ? 'bg-linear-to-br from-[oklch(0.13_0.028_261.692)] to-[#0d1117]' : 'bg-[#0d1117]'}`}>
-                    {project.title !== 'eticketing' && (
-                      <motion.img
-                        src={project.image}
-                        alt={project.title}
-                        whileHover={{ scale: 1.15 }}
-                        transition={{ duration: 0.6 }}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    )}
+          {/* Left: details of the selected project */}
+          <div ref={detailsRef} className="lg:col-span-4 scroll-mt-28">
+            <div className="lg:sticky lg:top-28">
+              <AnimatePresence mode="wait">
+                <ProjectDetails key={selected.title} project={selected} />
+              </AnimatePresence>
+            </div>
+          </div>
 
-                   {/* Hover Overlay */}
-                   <div className='absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md'>
-                     <h3 className={`text-3xl font-black mb-2 tracking-tighter translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ${project.accentColor}`}>
-                       {project.imageText}
-                     </h3>
-                     <p className='text-[10px] text-gray-100 uppercase tracking-[0.2em] font-medium translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75'>
-                       {project.imageSubtext}
-                     </p>
-                   </div>
+          {/* Middle: glowing rail whose node follows the selected card */}
+          <div ref={railRef} className="hidden lg:flex lg:col-span-1 relative justify-center" aria-hidden="true">
+            <div className="absolute inset-y-0 w-px bg-border" />
+            <div className="absolute inset-y-0 w-[1.5px] bg-linear-to-b from-cyan-400/80 via-sky-500/40 to-transparent" />
+            <motion.div style={{ y: dotY }} className="absolute top-0 left-1/2 -translate-x-1/2">
+              <div className="relative -translate-y-1/2 flex items-center justify-center">
+                <span className="absolute h-10 w-10 rounded-full bg-cyan-500/30 blur-md" />
+                <span className="relative h-3.5 w-3.5 rounded-full bg-cyan-400 shadow-[0_0_15px_#38bdf8]" />
+              </div>
+            </motion.div>
+          </div>
 
-                   {/* Status Badge */}
-                   <div className={`absolute top-2 right-2 z-20 flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase rounded-full shadow-md tracking-wider origin-right transform transition-all duration-300 group-hover:scale-105 backdrop-blur-sm bg-white/10 border border-white/20 text-blue-700/80`}>
-                     {project.status === 'Completed' ? <Pin size={14} /> 
-                      : project.status === "Demo Illustration" 
-                      ? <SignalMedium size={14} /> 
-                      : <MdElectricBolt size={14} />}
-                     {project.status}
-                   </div>
-                </div>
-
-                {/* Project Content */}
-                <div className='p-4 sm:p-5 md:p-6 flex flex-col grow'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <h3 className='text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors'>
-                      {project.title}
-                    </h3>
-                    <div className='flex items-center gap-3'>
-                      {/* Code Quality Indicators */}
-                      {(project.hasTests || project.hasDocs) && (
-                        <div className='flex gap-2 mr-2'>
-                          {project.hasTests && (
-                            <div className='flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/10 text-green-600 dark:text-green-400' title='Tests'>
-                              <FileCode size={14} />
-                              <span className='text-[10px] font-bold'>Tests</span>
-                            </div>
-                          )}
-                          {project.hasDocs && (
-                            <div className='flex items-center gap-1 px-2 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400' title='API Docs'>
-                              <BookOpen size={14} />
-                              <span className='text-[10px] font-bold'>Docs</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className='flex gap-3 text-gray-500 dark:text-gray-400'>
-                        <motion.a 
-                          whileHover={{ scale: 1.2, color: '#3b82f6' }}
-                          href={project.github} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className='transition-colors'
-                        >
-                          <Github size={20} />
-                        </motion.a>
-                        <motion.a 
-                          whileHover={{ scale: 1.2, color: '#3b82f6' }}
-                          href={project.live} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className='transition-colors'
-                        >
-                          <ExternalLink size={20} />
-                        </motion.a>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className='text-sm text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 leading-relaxed'>
-                    {project.description}
-                  </p>
-
-                  <div className='mt-auto flex flex-wrap gap-2'>
-                    {displayedTech.map((t, i) => (
-                      <motion.span 
-                        key={i} 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.1 * i }}
-                        className='px-3 py-1 text-[11px] font-bold rounded-full border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 group-hover:border-emerald-500 transition-colors'
-                      >
-                        {t}
-                      </motion.span>
-                    ))}
-                    {remainingCount > 0 && (
-                      <span className='px-3 py-1 text-[11px] font-bold rounded-full border border-gray-500/30 text-gray-400 bg-gray-500/5'>
-                        +{remainingCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+          {/* Right: selectable project previews */}
+          <motion.div layout className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
+            {filtered.map((project, i) => (
+              <ProjectCard
+                key={project.title}
+                project={project}
+                selected={project.title === selectedTitle}
+                wide={i === 0 && filtered.length % 2 === 1}
+                onSelect={() => handleSelect(project.title)}
+                cardRef={(el) => { cardRefs.current[project.title] = el; }}
+              />
+            ))}
+          </motion.div>
+        </div>
       </div>
     </section>
   );

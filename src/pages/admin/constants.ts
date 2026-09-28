@@ -10,16 +10,17 @@ export const INTENT_LABELS: Record<string, string> = {
   deep_software: 'Software Deep Dive',
 };
 
+// Readable in both themes: darker text in light mode, lighter in dark mode
 export const INTENT_COLORS: Record<string, string> = {
-  hiring: 'bg-emerald-500/15 text-emerald-500',
-  quote: 'bg-blue-500/15 text-blue-500',
-  tech: 'bg-violet-500/15 text-violet-500',
-  partnership: 'bg-amber-500/15 text-amber-500',
-  faq: 'bg-gray-500/15 text-gray-400',
-  deep_frontend: 'bg-purple-500/15 text-purple-400',
-  deep_backend: 'bg-cyan-500/15 text-cyan-400',
-  deep_fullstack: 'bg-pink-500/15 text-pink-400',
-  deep_software: 'bg-orange-500/15 text-orange-400',
+  hiring: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+  quote: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
+  tech: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
+  partnership: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  faq: 'bg-muted text-muted-foreground',
+  deep_frontend: 'bg-purple-500/15 text-purple-700 dark:text-purple-400',
+  deep_backend: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400',
+  deep_fullstack: 'bg-pink-500/15 text-pink-700 dark:text-pink-400',
+  deep_software: 'bg-orange-500/15 text-orange-700 dark:text-orange-400',
 };
 
 export const QUICK_REPLIES = [
@@ -29,6 +30,26 @@ export const QUICK_REPLIES = [
   "Let's schedule a call to discuss further.",
   "Great, I'll send over more details soon!",
 ];
+
+// Response-time bands used across the admin (label always shown with the color)
+export function latencyStatus(ms: number): { level: 'good' | 'warning' | 'critical'; label: string } {
+  if (ms < 2000) return { level: 'good', label: 'Fast' };
+  if (ms < 4000) return { level: 'warning', label: 'Slow' };
+  return { level: 'critical', label: 'Very slow' };
+}
+
+export function formatMs(ms: number) {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(ms >= 10000 ? 0 : 1)}s` : `${Math.round(ms)}ms`;
+}
+
+// The chat widget doesn't collect names, so fall back to a stable, readable id
+export function displayName(conversation: { id: string; visitor_name: string | null }) {
+  return conversation.visitor_name?.trim() || `Visitor #${conversation.id.replace(/-/g, '').slice(0, 4).toUpperCase()}`;
+}
+
+export function avatarInitial(conversation: { id: string; visitor_name: string | null }) {
+  return conversation.visitor_name?.trim()?.[0]?.toUpperCase() || '#';
+}
 
 export function formatRelativeTime(dateStr: string) {
   const date = new Date(dateStr);

@@ -141,6 +141,24 @@ html {
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
   --particle-color: #000000; /* Black for light mode */
+
+  /* Data-viz tokens (admin dashboards). Validated with the dataviz palette checker against
+     the card surfaces: white here, #0a0a0a in dark. Series 1/2 = blue/orange categorical pair;
+     --viz-ord-* is the ordinal blue ramp, low -> high. */
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-grid: #ececea;
+  --viz-axis: #c3c2b7;
+  --viz-ord-1: #86b6ef;
+  --viz-ord-2: #5598e7;
+  --viz-ord-3: #2a78d6;
+  --viz-ord-4: #1c5cab;
+  --viz-ord-5: #104281;
+  /* Status colors: always paired with an icon + label, never color alone */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
 }
 
 /* Dark mode: true black with neutral (untinted) grays */
@@ -179,6 +197,17 @@ html {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --particle-color: #ffffff; /* White for dark mode */
+
+  /* Data-viz tokens stepped for the dark surface (see :root) */
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-grid: #1f1f1e;
+  --viz-axis: #383835;
+  --viz-ord-1: #184f95;
+  --viz-ord-2: #256abf;
+  --viz-ord-3: #3987e5;
+  --viz-ord-4: #6da7ec;
+  --viz-ord-5: #9ec5f4;
 }
 
 @layer base {

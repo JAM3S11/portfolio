@@ -1,81 +1,55 @@
 import { motion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, AlertOctagon, type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export type StatusLevel = 'good' | 'warning' | 'critical';
 
 interface MetricCardProps {
   label: string;
   value: string | number;
+  /** Secondary line under the value (context, not a delta) */
   sub?: string;
-  icon: LucideIcon;
-  color: 'blue' | 'violet' | 'amber' | 'emerald' | 'red' | 'cyan';
-  trend?: { value: number; positive: boolean };
-  isDarkMode: boolean;
+  icon?: LucideIcon;
+  /** Optional state; always rendered as icon + label, never color alone */
+  status?: { level: StatusLevel; label: string };
   delay?: number;
 }
 
-const colorMap: Record<string, string> = {
-  blue: 'bg-blue-500/10 text-blue-400',
-  violet: 'bg-violet-500/10 text-violet-400',
-  amber: 'bg-amber-500/10 text-amber-400',
-  emerald: 'bg-emerald-500/10 text-emerald-400',
-  red: 'bg-red-500/10 text-red-400',
-  cyan: 'bg-cyan-500/10 text-cyan-400',
+const STATUS: Record<StatusLevel, { icon: LucideIcon; color: string }> = {
+  good: { icon: CheckCircle2, color: 'var(--status-good)' },
+  warning: { icon: AlertTriangle, color: 'var(--status-warning)' },
+  critical: { icon: AlertOctagon, color: 'var(--status-critical)' },
 };
 
-const colorMapLight: Record<string, string> = {
-  blue: 'bg-blue-50 text-blue-600',
-  violet: 'bg-violet-50 text-violet-600',
-  amber: 'bg-amber-50 text-amber-600',
-  emerald: 'bg-emerald-50 text-emerald-600',
-  red: 'bg-red-50 text-red-600',
-  cyan: 'bg-cyan-50 text-cyan-600',
-};
+const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 
-export default function MetricCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  color,
-  trend,
-  isDarkMode,
-  delay = 0,
-}: MetricCardProps) {
-  const surface = isDarkMode ? 'bg-gray-900' : 'bg-white';
-  const border = isDarkMode ? 'border-gray-800' : 'border-gray-200';
-  const textPrimary = isDarkMode ? 'text-white' : 'text-gray-900';
-  const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
-  const iconColor = isDarkMode ? colorMap[color] : colorMapLight[color];
+// Stat tile: label, value (auto-compacted numbers), optional context line and status
+export default function MetricCard({ label, value, sub, icon: Icon, status, delay = 0 }: MetricCardProps) {
+  const display = typeof value === 'number' ? (Math.abs(value) >= 10000 ? compact.format(value) : value.toLocaleString()) : value;
+  const StatusIcon = status ? STATUS[status.level].icon : null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay }}
-      className={`${surface} rounded-2xl p-4 border ${border}`}
+      transition={{ duration: 0.25, delay }}
+      className="rounded-2xl border border-border bg-card p-4 md:p-5"
     >
-      <div
-        className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${iconColor}`}
-      >
-        <Icon size={16} />
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        {Icon && <Icon size={15} className="text-muted-foreground/70" aria-hidden="true" />}
       </div>
-      <div className="flex items-baseline gap-2">
-        <p className={`text-2xl font-bold tracking-tight ${textPrimary}`}>{value}</p>
-        {trend && (
-          <span
-            className={`text-xs font-medium ${
-              trend.positive ? 'text-emerald-500' : 'text-red-500'
-            }`}
-          >
-            {trend.positive ? '+' : ''}
-            {trend.value}%
-          </span>
-        )}
-      </div>
-      <p className={`text-xs font-medium mt-0.5 ${textMuted}`}>{label}</p>
-      {sub && (
-        <p className={`text-[11px] mt-1 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-          {sub}
-        </p>
+      <p className="mt-2 text-2xl md:text-[28px] font-semibold leading-none tracking-tight text-foreground">{display}</p>
+      {(sub || status) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          {status && StatusIcon && (
+            <span className="flex items-center gap-1 font-medium text-foreground">
+              <StatusIcon size={13} style={{ color: STATUS[status.level].color }} aria-hidden="true" />
+              {status.label}
+            </span>
+          )}
+          {sub && <span>{sub}</span>}
+        </div>
       )}
     </motion.div>
   );

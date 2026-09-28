@@ -29,6 +29,13 @@ const channels = [
   },
 ];
 
+// One-tap contact options shown above the form on phones
+const quickActions = [
+  { name: 'Email', icon: <Mail size={16} />, url: `mailto:${EMAIL}` },
+  { name: 'WhatsApp', icon: <img src={Whatsapp} alt="" className="h-4 w-4 opacity-80 dark:invert" />, url: channels[1].url, external: true },
+  { name: 'LinkedIn', icon: <Linkedin size={16} />, url: import.meta.env.VITE_LINKEDIN_URL, external: true },
+];
+
 const topics = ['Full-time role', 'Freelance project', 'Collaboration', 'Just saying hi'];
 
 const steps = [
@@ -44,8 +51,9 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
 
+// text-base (16px) on phones stops iOS Safari zooming the page when a field is focused
 const inputClass =
-  'w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm transition-colors focus:outline-none focus:border-brand/60 focus:ring-4 focus:ring-brand/10';
+  'w-full rounded-xl sm:rounded-lg border border-border bg-background px-3.5 py-3 sm:py-2.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm transition-colors focus:outline-none focus:border-brand/60 focus:ring-4 focus:ring-brand/10';
 
 // Current time in Nairobi, refreshed every 30s
 const useLocalTime = () => {
@@ -110,7 +118,7 @@ const ContactPage = () => {
   };
 
   return (
-    <section id="contact" className="relative bg-background text-foreground px-6 py-24 md:py-32 overflow-hidden">
+    <section id="contact" className="relative bg-background text-foreground px-5 sm:px-6 py-16 sm:py-24 md:py-32 overflow-hidden">
       <div className="max-w-6xl mx-auto">
 
         {/* Heading */}
@@ -119,35 +127,70 @@ const ContactPage = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeUp}
-          className="text-center mb-16 md:mb-20"
+          className="text-center mb-8 sm:mb-16 md:mb-20"
         >
           <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
             Let's build something
           </p>
-          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-wide">
+          <h2 className="text-[2rem] leading-tight sm:text-4xl md:text-5xl font-extrabold uppercase tracking-normal sm:tracking-wide">
             Get in{' '}
             <span className="italic bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600 dark:from-sky-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent pr-1">
               Touch
             </span>
           </h2>
-          <p className="mt-5 max-w-xl mx-auto text-base text-muted-foreground leading-relaxed">
+          <p className="mt-4 sm:mt-5 max-w-xl mx-auto text-[15px] sm:text-base text-muted-foreground leading-relaxed text-balance">
             Hiring, have a product in mind, or want to collaborate? Tell me about it and I'll reply
             personally.
           </p>
         </motion.div>
 
+        {/* Mobile quick actions: reach out in one tap before scrolling to the form */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUp}
+          className="lg:hidden mb-8 space-y-4"
+        >
+          <div className="grid grid-cols-3 gap-2.5">
+            {quickActions.map(({ name, icon, url, external }) => (
+              <a
+                key={name}
+                href={url}
+                {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
+                className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card/50 py-4 text-xs font-medium text-foreground active:scale-[0.97] active:bg-muted transition"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
+                  {icon}
+                </span>
+                {name}
+              </a>
+            ))}
+          </div>
+          <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              Available for new work
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock size={12} />
+              <span className="font-mono">{localTime}</span> in Nairobi
+            </span>
+          </p>
+        </motion.div>
+
         <div className="grid lg:grid-cols-[1fr_1.25fr] gap-10 lg:gap-16 items-start">
 
-          {/* Left: direct channels + process */}
+          {/* Left: direct channels + process (after the form on phones) */}
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-            className="space-y-10"
+            className="order-2 lg:order-1 space-y-8 lg:space-y-10"
           >
-            {/* Availability */}
-            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            {/* Availability (mobile shows this above the form instead) */}
+            <motion.div variants={fadeUp} className="hidden lg:flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
               <span className="flex items-center gap-2 text-foreground">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
@@ -173,7 +216,7 @@ const ContactPage = () => {
                   type="button"
                   onClick={copyEmail}
                   aria-label={copied ? 'Email copied' : 'Copy email address'}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 lg:py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground active:bg-muted transition-colors"
                 >
                   {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
                   {copied ? 'Copied' : 'Copy'}
@@ -181,8 +224,8 @@ const ContactPage = () => {
               </div>
             </motion.div>
 
-            {/* Other channels */}
-            <motion.div variants={fadeUp}>
+            {/* Other channels (covered by the quick actions on phones) */}
+            <motion.div variants={fadeUp} className="hidden lg:block">
               <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground mb-3">Elsewhere</p>
               <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
                 {channels.map((c) => (
@@ -223,19 +266,19 @@ const ContactPage = () => {
             </motion.div>
           </motion.div>
 
-          {/* Right: form */}
+          {/* Right: form (first on phones) */}
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeUp}
-            className="relative"
+            className="relative order-1 lg:order-2"
           >
-            <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-linear-to-br from-cyan-500/10 via-brand/10 to-transparent blur-2xl" />
+            <div className="absolute -inset-3 sm:-inset-6 -z-10 rounded-[2rem] bg-linear-to-br from-cyan-500/10 via-brand/10 to-transparent blur-2xl" />
 
             <form
               onSubmit={handleForm}
-              className="rounded-2xl border border-border bg-card/70 backdrop-blur-sm p-6 md:p-8 shadow-xl shadow-black/5 space-y-5"
+              className="rounded-2xl border border-border bg-card/70 backdrop-blur-sm p-5 sm:p-6 md:p-8 shadow-xl shadow-black/5 space-y-5"
             >
               {/* Honeypot for spam bots (Web3Forms) */}
               <input type="checkbox" name="botcheck" className="hidden" tabIndex={-1} autoComplete="off" />
@@ -253,7 +296,7 @@ const ContactPage = () => {
                     <label
                       key={t}
                       className={cn(
-                        'cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40',
+                        'cursor-pointer rounded-full border px-3.5 py-2 sm:py-1.5 text-[13px] sm:text-xs font-medium transition-colors active:scale-[0.97] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40',
                         topic === t
                           ? 'border-brand/60 bg-brand/10 text-foreground'
                           : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/20'
@@ -278,13 +321,13 @@ const ContactPage = () => {
                   <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-foreground">
                     Name
                   </label>
-                  <input id="contact-name" name="name" type="text" required autoComplete="name" placeholder="Jane Doe" className={inputClass} />
+                  <input id="contact-name" name="name" type="text" required autoComplete="name" enterKeyHint="next" placeholder="Jane Doe" className={inputClass} />
                 </div>
                 <div>
                   <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-foreground">
                     Email
                   </label>
-                  <input id="contact-email" name="email" type="email" required autoComplete="email" placeholder="jane@company.com" className={inputClass} />
+                  <input id="contact-email" name="email" type="email" inputMode="email" required autoComplete="email" autoCapitalize="none" enterKeyHint="next" placeholder="jane@company.com" className={inputClass} />
                 </div>
               </div>
 
@@ -313,7 +356,7 @@ const ContactPage = () => {
                 type="submit"
                 disabled={status === 'loading'}
                 className={cn(
-                  'group flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-70',
+                  'group flex h-12 sm:h-auto w-full items-center justify-center gap-2 rounded-xl sm:rounded-lg sm:py-3 text-[15px] sm:text-sm font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70',
                   status === 'success'
                     ? 'bg-green-600 text-white'
                     : 'bg-foreground text-background hover:bg-brand hover:text-white'

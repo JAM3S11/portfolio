@@ -6,6 +6,7 @@ export async function signInAdmin(
   password: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!supabase) {
+    // Demo mode only (no Supabase, so the dashboard shows sample data, not real visitors)
     const defaultPassword =
       import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
     if (password === defaultPassword) {
@@ -22,12 +23,20 @@ export async function signInAdmin(
       console.warn('Anonymous auth unavailable (enable in Supabase dashboard for delete to work):', signInError.message);
     }
 
-    // Validate password against admin_settings table
+    // Validate password against admin_settings table.
+    // No hardcoded fallback: real visitor data must never sit behind a guessable default.
     const settings = await getAdminSettings();
     const validPassword =
       settings?.admin_password ||
-      import.meta.env.VITE_ADMIN_PASSWORD ||
-      'admin123';
+      import.meta.env.VITE_ADMIN_PASSWORD;
+
+    if (!validPassword) {
+      if (!signInError) await supabase.auth.signOut();
+      return {
+        success: false,
+        error: 'Admin password is not configured. Set VITE_ADMIN_PASSWORD or add it to admin_settings.',
+      };
+    }
 
     if (password === validPassword) {
       return { success: true };

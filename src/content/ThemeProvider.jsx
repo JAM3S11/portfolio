@@ -18,6 +18,10 @@ export const ThemeProvider = ({ children }) => {
             document.documentElement.classList.remove('dark');
         }
         localStorage.setItem('darkMode', isDarkMode.toString());
+        // Match the mobile browser bar to the chosen theme, not just the OS setting
+        document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+            meta.setAttribute('content', isDarkMode ? '#000000' : '#ffffff');
+        });
     }, [isDarkMode]);
 
     const toggleDarkMode = () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createConversation, addMessage, isSupabaseConfigured } from '@/lib/chat-service';
+import { createConversation, addMessage, isSupabaseConfigured, subscribeToMessages } from '@/lib/chat-service';
 import { generateResponseWithMetrics, generateDeepDiveResponseWithMetrics } from '@/lib/faq-knowledge';
 import { logAIInteraction, logAIError, logUserFeedback } from '@/lib/analytics-service';
 import { evaluateInteraction } from '@/lib/alert-service';
@@ -17,6 +17,8 @@ export interface ChatMessage {
   /** Show the "talk to James" handoff card under this reply */
   handoff?: boolean;
   feedback?: 'up' | 'down';
+  /** Set when James replied from the admin inbox rather than the AI */
+  from?: 'james';
   /** Ids in Supabase, used for feedback logging */
   dbId?: string;
   convId?: string;
@@ -138,7 +140,32 @@ export function useChat() {
   const [isSupabase] = useState(isSupabaseConfigured);
 
   const conversationIdRef = useRef<string | null>(stored?.conversationId ?? null);
+  // State mirror of the ref so the realtime subscription re-binds when a conversation starts
+  const [conversationId, setConversationId] = useState<string | null>(stored?.conversationId ?? null);
   const intentRef = useRef<string | null>(null);
+  // Bot messages this widget saved itself, so their realtime echoes are ignored.
+  // Anything else arriving with role 'bot' was sent by James from the admin inbox.
+  const ownBotMessagesRef = useRef<Map<string, number>>(new Map());
+
+  // Deliver admin replies to the visitor live
+  useEffect(() => {
+    if (!isSupabase || !conversationId) return;
+    return subscribeToMessages(conversationId, (msg) => {
+      if (msg.role !== 'bot') return;
+      const own = ownBotMessagesRef.current;
+      const pending = own.get(msg.content);
+      if (pending) {
+        if (pending === 1) own.delete(msg.content);
+        else own.set(msg.content, pending - 1);
+        return;
+      }
+      setMessages((prev) =>
+        prev.some((m) => m.dbId === msg.id)
+          ? prev
+          : [...prev, { id: newId(), role: 'bot', content: msg.content, from: 'james', dbId: msg.id, convId: msg.conversation_id }]
+      );
+    });
+  }, [isSupabase, conversationId]);
 
   // Keep the conversation across reloads within the tab
   useEffect(() => {
@@ -159,6 +186,12 @@ export function useChat() {
         if (!conv) return null;
         convId = conv.id;
         conversationIdRef.current = conv.id;
+        setConversationId(conv.id);
+      }
+      // Register before inserting so the realtime echo is recognised even if it arrives first
+      if (role === 'bot') {
+        const own = ownBotMessagesRef.current;
+        own.set(content, (own.get(content) ?? 0) + 1);
       }
       const msg = await addMessage(convId, role, content);
       return msg ? { convId, msgId: msg.id } : null;
@@ -273,7 +306,9 @@ export function useChat() {
     setMode('chat');
     setDeepFocus(null);
     conversationIdRef.current = null;
+    setConversationId(null);
     intentRef.current = null;
+    ownBotMessagesRef.current.clear();
   }, []);
 
   return {

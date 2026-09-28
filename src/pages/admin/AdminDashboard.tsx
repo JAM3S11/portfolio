@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  Inbox, BarChart3, Activity, Bell,
+  Inbox, BarChart3, Activity, Bell, Download, Moon, ArrowUpRight, LogOut, Archive, CheckCheck, Keyboard,
 } from 'lucide-react';
 import {
   getLatestMessages,
@@ -9,216 +9,328 @@ import {
   getAllMessages,
   addMessage,
   deleteConversation,
+  updateConversationStatus,
   isSupabaseConfigured,
   subscribeToNewConversations,
+  subscribeToAllMessages,
+  type Message,
 } from '@/lib/chat-service';
-import { signInAdmin } from '@/lib/auth-service';
+import { signInAdmin, signOut } from '@/lib/auth-service';
+import { subscribeToAlerts, type AlertEvent } from '@/lib/alert-service';
 import { toast } from 'sonner';
-import { useTheme } from '@/content/ThemeProvider';
-import type { ConvoItem, MessageItem } from './types';
-import { INTENT_LABELS } from './constants';
+import { cn } from '@/lib/utils';
+import type { ConvoItem, MessageItem, MessageSender } from './types';
+import { displayName } from './constants';
+import { loadSeen, saveSeen, loadSentIds, saveSentIds } from './inboxStorage';
+import { saveAdminSession, hasAdminSession, clearAdminSession } from './adminSession';
 import AdminLogin from './AdminLogin';
 import ConversationsList from './ConversationsList';
 import ChatPanel from './ChatPanel';
-import AnalyticsPanel from './AnalyticsPanel';
+import ConversationDetails from './ConversationDetails';
 import RealTimeMonitor from '@/components/admin/RealTimeMonitor';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import AlertCenter from '@/components/admin/AlertCenter';
 import ConfirmModal from './ConfirmModal';
+import AdminSidebar, { type AdminSection } from './AdminSidebar';
+import PageHeader from './PageHeader';
+import CommandPalette, { ShortcutsDialog, type PaletteCommand } from './CommandPalette';
+import { isTypingTarget } from './shortcuts';
+import { useTheme } from '@/content/ThemeProvider';
 
-type SidebarTab = 'messages' | 'monitor' | 'analytics' | 'alerts';
+type SidebarTab = AdminSection;
+
+const SIDEBAR_KEY = 'jdg-admin-sidebar-collapsed';
+
+// Slow down password guessing: after this many misses the form locks briefly
+const MAX_ATTEMPTS = 5;
+const LOCK_MS = 30_000;
+
+const PAGE_META: Record<SidebarTab, { title: string; description: string }> = {
+  messages: { title: 'Inbox', description: 'Conversations from the portfolio AI assistant' },
+  monitor: { title: 'Live monitor', description: 'Real-time AI activity and response times' },
+  analytics: { title: 'Analytics', description: 'AI performance, answer quality and traffic' },
+  alerts: { title: 'Alerts', description: 'Threshold breaches and alert rules' },
+};
+
+const latestTime = (item: ConvoItem) =>
+  new Date(item.latestMessage?.created_at || item.conversation.created_at).getTime();
+
+const sortByActivity = (items: ConvoItem[]) => [...items].sort((a, b) => latestTime(b) - latestTime(a));
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { isDarkMode } = useTheme();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  // Restored from a saved session so a refresh doesn't ask for the password again
+  const [isAuthorized, setIsAuthorized] = useState(hasAdminSession);
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
+  const [clock, setClock] = useState(() => Date.now());
   const [conversations, setConversations] = useState<ConvoItem[]>([]);
   const [selectedConvo, setSelectedConvo] = useState<ConvoItem | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [replyText, setReplyText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSupabase, setIsSupabase] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSupabase] = useState(isSupabaseConfigured);
   const [allMessages, setAllMessages] = useState<any[]>([]);
-  const [searchAllQuery, setSearchAllQuery] = useState('');
-  const [activeSearch, setActiveSearch] = useState<'conversation' | 'message' | null>(null);
   const [mobileTab, setMobileTab] = useState<'list' | 'chat' | 'monitor' | 'analytics' | 'alerts'>('list');
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('messages');
-  const [deleteTarget, setDeleteTarget] = useState<ConvoItem | null>(null);
-
-  const dk = isDarkMode;
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Ids in the order the inbox list currently shows them (after search/filters), for j/k
+  const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  const { toggleDarkMode } = useTheme();
+  // Render only the layout for this screen size (avoids a hidden duplicate thread/composer)
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  // Latest keyboard handler; the listener below is registered once and calls through this ref
+  const shortcutHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  const pendingGRef = useRef(0);
 
   useEffect(() => {
-    setIsSupabase(isSupabaseConfigured());
+    const onKeyDown = (e: KeyboardEvent) => shortcutHandlerRef.current(e);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+  const [deleteTarget, setDeleteTarget] = useState<ConvoItem | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_KEY) === '1'; } catch { return false; }
+  });
+  // Alerts live here (not in AlertCenter) so none are lost while another page is open
+  const [alerts, setAlerts] = useState<AlertEvent[]>([]);
+  // conversation id -> last time it was opened here (drives unread state)
+  const [seen, setSeen] = useState<Record<string, string>>(() => loadSeen() ?? {});
+
+  // Ids of bot-role messages the admin wrote, so they show as "You" rather than "AI"
+  const sentIdsRef = useRef<Set<string>>(loadSentIds());
+  // Reply texts saved but not yet confirmed, so their realtime echo isn't added twice
+  const pendingRepliesRef = useRef<Map<string, number>>(new Map());
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedConvo?.conversation.id ?? null;
+
+  useEffect(() => {
+    if (isAuthorized) loadDashboardData();
+    // Mount only: a restored session loads its data once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (lockedUntil <= Date.now()) return;
+    const id = setInterval(() => {
+      const now = Date.now();
+      setClock(now);
+      if (now >= lockedUntil) {
+        clearInterval(id);
+        setLoginError(null);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  const senderOf = useCallback(
+    (role: 'visitor' | 'bot', id?: string): MessageSender =>
+      role === 'visitor' ? 'visitor' : id && sentIdsRef.current.has(id) ? 'you' : 'ai',
+    []
+  );
+
+  const markSeen = useCallback((conversationId: string) => {
+    setSeen((prev) => {
+      const next = { ...prev, [conversationId]: new Date().toISOString() };
+      saveSeen(next);
+      return next;
+    });
+  }, []);
+
+  // Unread = activity after the last time the conversation was opened here
+  const unreadIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of conversations) {
+      const lastSeen = seen[item.conversation.id];
+      if (item.latestMessage && (!lastSeen || new Date(item.latestMessage.created_at) > new Date(lastSeen))) {
+        ids.add(item.conversation.id);
+      }
+    }
+    return ids;
+  }, [conversations, seen]);
 
   useEffect(() => {
     if (!isSupabase || !isAuthorized) return;
     const unsubscribe = subscribeToNewConversations((newConversation) => {
-      setConversations((prev) => [
-        { conversation: newConversation, latestMessage: null },
-        ...prev,
-      ]);
+      setConversations((prev) =>
+        prev.some((c) => c.conversation.id === newConversation.id)
+          ? prev
+          : [{ conversation: newConversation, latestMessage: null }, ...prev]
+      );
+      toast(`New conversation from ${displayName(newConversation)}`);
     });
     return () => unsubscribe();
   }, [isSupabase, isAuthorized]);
 
-  const filteredConversations = React.useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const q = searchQuery.toLowerCase();
-    return conversations.filter((item) => {
-      if (!item.latestMessage) return false;
-      return (
-        (item.conversation.visitor_name || 'anonymous').toLowerCase().includes(q) ||
-        (item.conversation.visitor_email || '').toLowerCase().includes(q)
+  // Live messages: update list previews and ordering, search index, and the open thread
+  useEffect(() => {
+    if (!isSupabase || !isAuthorized) return;
+    return subscribeToAllMessages((msg: Message) => {
+      setConversations((prev) =>
+        sortByActivity(
+          prev.map((c) =>
+            c.conversation.id === msg.conversation_id
+              ? { ...c, latestMessage: { content: msg.content, created_at: msg.created_at, role: msg.role } }
+              : c
+          )
+        )
       );
-    });
-  }, [searchQuery, conversations]);
+      setAllMessages((prev) => [{ ...msg, conversationId: msg.conversation_id }, ...prev]);
 
-  const searchResults = React.useMemo(() => {
-    if (!searchAllQuery.trim()) return [];
-    const q = searchAllQuery.toLowerCase();
-    return allMessages.filter((m) => m.content.toLowerCase().includes(q)).slice(0, 20);
-  }, [searchAllQuery, allMessages]);
+      if (msg.conversation_id !== selectedIdRef.current) return;
+
+      // Our own reply echoing back: its optimistic copy gets the id when the save resolves
+      if (msg.role === 'bot') {
+        const pending = pendingRepliesRef.current.get(msg.content);
+        if (pending) {
+          if (pending === 1) pendingRepliesRef.current.delete(msg.content);
+          else pendingRepliesRef.current.set(msg.content, pending - 1);
+          return;
+        }
+      }
+      setMessages((prev) =>
+        prev.some((m) => m.id === msg.id)
+          ? prev
+          : [...prev, { id: msg.id, role: msg.role, sender: senderOf(msg.role, msg.id), content: msg.content, created_at: msg.created_at }]
+      );
+      markSeen(msg.conversation_id);
+    });
+  }, [isSupabase, isAuthorized, senderOf, markSeen]);
+
+  useEffect(() => {
+    if (!isAuthorized) return;
+    return subscribeToAlerts((alert) => setAlerts((prev) => [alert, ...prev].slice(0, 100)));
+  }, [isAuthorized]);
+
+  const navigateSection = (section: SidebarTab) => setSidebarTab(section);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      try { localStorage.setItem(SIDEBAR_KEY, prev ? '0' : '1'); } catch { /* storage unavailable */ }
+      return !prev;
+    });
+  };
+
+  const acknowledgeAlert = (alertId: string) =>
+    setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, acknowledged: true } : a)));
+
+  const unacknowledgedAlerts = alerts.filter((a) => !a.acknowledged).length;
+
+  // Restore the original tab title when leaving the admin
+  useEffect(() => {
+    const original = document.title;
+    return () => {
+      document.title = original;
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    clearAdminSession();
+    setIsAuthorized(false);
+    setPassword('');
+    setSelectedConvo(null);
+    setMessages([]);
+    setConversations([]);
+    setAllMessages([]);
+    setAlerts([]);
+    setSidebarTab('messages');
+  };
 
   const stats = React.useMemo(() => {
     const now = new Date();
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(now.getDate() - i);
-      return d.toDateString();
-    }).reverse();
-
-    const activityByDay = last7Days.map((dateStr) => ({
-      day: new Date(dateStr).toLocaleDateString([], { weekday: 'short' }),
-      count: allMessages.filter(
-        (m) => new Date(m.created_at).toDateString() === dateStr
-      ).length,
-    }));
-
     const todayCount = conversations.filter(
-      (item) =>
-        item.latestMessage &&
-        new Date(item.latestMessage.created_at).toDateString() === now.toDateString()
+      (item) => item.latestMessage && new Date(item.latestMessage.created_at).toDateString() === now.toDateString()
     ).length;
+    return { todayCount };
+  }, [conversations]);
 
-    const totalMessages = allMessages.length;
-    const botMessages = allMessages.filter((m) => m.role === 'bot').length;
+  // First time the inbox is opened in this browser, treat existing conversations as read
+  const initialiseSeen = (items: ConvoItem[]) => {
+    if (loadSeen() !== null) return;
+    const now = new Date().toISOString();
+    const initial = Object.fromEntries(items.map((c) => [c.conversation.id, now]));
+    saveSeen(initial);
+    setSeen(initial);
+  };
 
-    const intentCounts = Object.keys(INTENT_LABELS).reduce(
-      (acc, key) => {
-        acc[key] = conversations.filter(
-          (c) => c.conversation.visitor_intent === key
-        ).length;
-        return acc;
+  // Sample data for demo mode (no Supabase configured)
+  const loadDemoData = () => {
+    const now = Date.now();
+    setConversations([
+      {
+        conversation: {
+          id: 'demo-1',
+          visitor_name: 'John Smith',
+          visitor_email: 'john@example.com',
+          visitor_intent: 'hiring',
+          status: 'active',
+          created_at: new Date(now).toISOString(),
+          updated_at: new Date(now).toISOString(),
+        },
+        latestMessage: { content: 'Hi, I want to hire you for a project!', created_at: new Date(now).toISOString() },
       },
-      {} as Record<string, number>
-    );
-
-    const statusCounts = conversations.reduce(
-      (acc, c) => {
-        const s = c.conversation.status || 'active';
-        acc[s] = (acc[s] || 0) + 1;
-        return acc;
+      {
+        conversation: {
+          id: 'demo-2',
+          visitor_name: 'Sarah Johnson',
+          visitor_email: 'sarah@company.com',
+          visitor_intent: 'quote',
+          status: 'active',
+          created_at: new Date(now - 86400000).toISOString(),
+          updated_at: new Date(now - 86400000).toISOString(),
+        },
+        latestMessage: { content: 'Can you check out my startup idea?', created_at: new Date(now - 86400000).toISOString() },
       },
-      {} as Record<string, number>
-    );
-
-    return {
-      totalConversations: conversations.length,
-      todayCount,
-      totalMessages,
-      botMessages,
-      visitorMessages: allMessages.filter((m) => m.role === 'visitor').length,
-      intentCounts,
-      activityByDay,
-      statusCounts,
-      avgMsgs:
-        conversations.length > 0
-          ? (totalMessages / conversations.length).toFixed(1)
-          : '0',
-    };
-  }, [conversations, allMessages]);
-
-  const handleLogin = async () => {
-    setIsLoading(true);
-
-    if (isSupabase) {
-      const result = await signInAdmin(password);
-      if (result.success) {
-        setIsAuthorized(true);
-        loadConversations();
-        loadAllMessages();
-      } else {
-        toast.error(result.error || 'Login failed');
-      }
-    } else {
-      setIsAuthorized(true);
-      const now = Date.now();
-      setConversations([
-        {
-          conversation: {
-            id: 'demo-1',
-            visitor_name: 'John Smith',
-            visitor_email: 'john@example.com',
-            visitor_intent: 'hiring',
-            status: 'active',
-            created_at: new Date(now).toISOString(),
-            updated_at: new Date(now).toISOString(),
-          },
-          latestMessage: { content: 'Hi, I want to hire you for a project!', created_at: new Date(now).toISOString() },
+      {
+        conversation: {
+          id: 'demo-3',
+          visitor_name: 'Mike Chen',
+          visitor_email: 'mike@tech.io',
+          visitor_intent: 'tech',
+          status: 'active',
+          created_at: new Date(now - 172800000).toISOString(),
+          updated_at: new Date(now - 172800000).toISOString(),
         },
-        {
-          conversation: {
-            id: 'demo-2',
-            visitor_name: 'Sarah Johnson',
-            visitor_email: 'sarah@company.com',
-            visitor_intent: 'quote',
-            status: 'active',
-            created_at: new Date(now - 86400000).toISOString(),
-            updated_at: new Date(now - 86400000).toISOString(),
-          },
-          latestMessage: { content: 'Can you check out my startup idea?', created_at: new Date(now - 86400000).toISOString() },
+        latestMessage: { content: 'Thanks for the quick response!', created_at: new Date(now - 172800000).toISOString() },
+      },
+      {
+        conversation: {
+          id: 'demo-4',
+          visitor_name: 'Alice Kim',
+          visitor_email: 'alice@dev.co',
+          visitor_intent: 'deep_frontend',
+          status: 'active',
+          created_at: new Date(now - 3600000).toISOString(),
+          updated_at: new Date(now - 3600000).toISOString(),
         },
-        {
-          conversation: {
-            id: 'demo-3',
-            visitor_name: 'Mike Chen',
-            visitor_email: 'mike@tech.io',
-            visitor_intent: 'tech',
-            status: 'active',
-            created_at: new Date(now - 172800000).toISOString(),
-            updated_at: new Date(now - 172800000).toISOString(),
-          },
-          latestMessage: { content: 'Thanks for the quick response!', created_at: new Date(now - 172800000).toISOString() },
+        latestMessage: { content: 'How does the Zustand store in SOLEASE handle cross-store communication?', created_at: new Date(now - 3600000).toISOString() },
+      },
+      {
+        conversation: {
+          id: 'demo-5',
+          visitor_name: 'David Ochieng',
+          visitor_email: 'david@startup.ke',
+          visitor_intent: 'deep_backend',
+          status: 'active',
+          created_at: new Date(now - 7200000).toISOString(),
+          updated_at: new Date(now - 7200000).toISOString(),
         },
-        {
-          conversation: {
-            id: 'demo-4',
-            visitor_name: 'Alice Kim',
-            visitor_email: 'alice@dev.co',
-            visitor_intent: 'deep_frontend',
-            status: 'active',
-            created_at: new Date(now - 3600000).toISOString(),
-            updated_at: new Date(now - 3600000).toISOString(),
-          },
-          latestMessage: { content: 'How does the Zustand store in SOLEASE handle cross-store communication?', created_at: new Date(now - 3600000).toISOString() },
-        },
-        {
-          conversation: {
-            id: 'demo-5',
-            visitor_name: 'David Ochieng',
-            visitor_email: 'david@startup.ke',
-            visitor_intent: 'deep_backend',
-            status: 'active',
-            created_at: new Date(now - 7200000).toISOString(),
-            updated_at: new Date(now - 7200000).toISOString(),
-          },
-          latestMessage: { content: 'What drove the MongoDB to PostgreSQL migration in SOLEASE?', created_at: new Date(now - 7200000).toISOString() },
-        },
-      ]);
-      setAllMessages([
+        latestMessage: { content: 'What drove the MongoDB to PostgreSQL migration in SOLEASE?', created_at: new Date(now - 7200000).toISOString() },
+      },
+    ]);
+    setAllMessages(
+      [
         { content: 'Hi, I want to hire you!', role: 'visitor', created_at: new Date(now).toISOString(), conversationId: 'demo-1' },
         { content: 'Tell me more about the project.', role: 'bot', created_at: new Date(now).toISOString(), conversationId: 'demo-1' },
         { content: 'Check out my startup idea?', role: 'visitor', created_at: new Date(now - 86400000).toISOString(), conversationId: 'demo-2' },
@@ -231,14 +343,53 @@ export default function AdminDashboard() {
         { content: 'I want to explore: Backend Deep Dive', role: 'visitor', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
         { content: "Backend Deep Dive activated!", role: 'bot', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
         { content: 'What drove the MongoDB to PostgreSQL migration in SOLEASE?', role: 'visitor', created_at: new Date(now - 7200000).toISOString(), conversationId: 'demo-5' },
-      ]);
+      ].map((m, i) => ({ ...m, id: `demo-msg-${i}` }))
+    );
+  };
+
+  const loadDashboardData = () => {
+    if (isSupabase) {
+      loadConversations();
+      loadAllMessages();
+    } else {
+      loadDemoData();
     }
+  };
+
+  const lockedSeconds = Math.max(0, Math.ceil((lockedUntil - clock) / 1000));
+
+  const handleLogin = async () => {
+    if (lockedSeconds > 0 || !password.trim()) return;
+    setIsLoading(true);
+    setLoginError(null);
+    const result = await signInAdmin(password);
     setIsLoading(false);
+
+    if (!result.success) {
+      const attempts = failedAttempts + 1;
+      if (attempts >= MAX_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCK_MS);
+        setClock(Date.now());
+        setFailedAttempts(0);
+      } else {
+        setFailedAttempts(attempts);
+      }
+      setLoginError(result.error || 'Incorrect password');
+      return;
+    }
+
+    saveAdminSession(remember);
+    setFailedAttempts(0);
+    setPassword('');
+    setIsAuthorized(true);
+    loadDashboardData();
   };
 
   const loadConversations = async () => {
     setIsLoading(true);
-    setConversations(await getLatestMessages());
+    const items = sortByActivity(await getLatestMessages());
+    initialiseSeen(items);
+    setConversations(items);
     setIsLoading(false);
   };
 
@@ -248,13 +399,19 @@ export default function AdminDashboard() {
 
   const loadMessages = async (convo: ConvoItem) => {
     setSelectedConvo(convo);
+    setReplyText('');
     setMobileTab('chat');
     setSidebarTab('messages');
+    markSeen(convo.conversation.id);
     if (isSupabase) {
       const msgs = await getMessages(convo.conversation.id);
+      // Ignore the result if another conversation was opened while this one loaded
+      if (selectedIdRef.current !== convo.conversation.id) return;
       setMessages(
         msgs.map((m) => ({
-          role: m.role as 'visitor' | 'bot',
+          id: m.id,
+          role: m.role,
+          sender: senderOf(m.role, m.id),
           content: m.content,
           created_at: m.created_at,
         }))
@@ -263,33 +420,70 @@ export default function AdminDashboard() {
       const thread = allMessages
         .filter((m) => m.conversationId === convo.conversation.id)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .map((m) => ({ role: m.role as 'visitor' | 'bot', content: m.content, created_at: m.created_at }));
+        .map((m) => ({ id: m.id, role: m.role as 'visitor' | 'bot', sender: senderOf(m.role, m.id), content: m.content, created_at: m.created_at }));
       setMessages(thread.length > 0 ? thread : [
-        { role: 'visitor', content: convo.latestMessage?.content || 'Hello!', created_at: convo.conversation.created_at },
+        { role: 'visitor', sender: 'visitor', content: convo.latestMessage?.content || 'Hello!', created_at: convo.conversation.created_at },
       ]);
     }
   };
 
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedConvo) return;
-    const msg = replyText;
+    const text = replyText.trim();
+    if (!text || !selectedConvo) return;
+    const conversationId = selectedConvo.conversation.id;
+    const createdAt = new Date().toISOString();
     setReplyText('');
+
+    // Optimistic bubble, confirmed (or marked failed) once the save resolves
+    const tempKey = `pending-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      { role: 'bot', content: msg, created_at: new Date().toISOString() },
+      { id: tempKey, role: 'bot', sender: 'you', content: text, created_at: createdAt, pending: isSupabase },
     ]);
-    if (isSupabase)
-      await addMessage(selectedConvo.conversation.id, 'bot', msg);
+
+    if (!isSupabase) {
+      const demoId = `demo-reply-${Date.now()}`;
+      sentIdsRef.current.add(demoId);
+      setMessages((prev) => prev.map((m) => (m.id === tempKey ? { ...m, id: demoId } : m)));
+      return;
+    }
+
+    const pending = pendingRepliesRef.current;
+    pending.set(text, (pending.get(text) ?? 0) + 1);
+    const saved = await addMessage(conversationId, 'bot', text);
+
+    if (!saved) {
+      const count = pending.get(text) ?? 0;
+      if (count <= 1) pending.delete(text);
+      else pending.set(text, count - 1);
+      setMessages((prev) => prev.filter((m) => m.id !== tempKey));
+      setReplyText(text);
+      toast.error('Reply failed to send. Your text is back in the box.');
+      return;
+    }
+
+    sentIdsRef.current.add(saved.id);
+    saveSentIds(sentIdsRef.current);
+    setMessages((prev) =>
+      prev.map((m) => (m.id === tempKey ? { ...m, id: saved.id, created_at: saved.created_at, pending: false } : m))
+    );
+    markSeen(conversationId);
   };
 
-  const handleQuickReply = async (reply: string) => {
-    if (!selectedConvo) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: 'bot', content: reply, created_at: new Date().toISOString() },
-    ]);
-    if (isSupabase)
-      await addMessage(selectedConvo.conversation.id, 'bot', reply);
+  const handleArchive = async (item: ConvoItem) => {
+    const next = item.conversation.status === 'archived' ? 'active' : 'archived';
+    if (isSupabase) {
+      const ok = await updateConversationStatus(item.conversation.id, next);
+      if (!ok) {
+        toast.error('Could not update the conversation');
+        return;
+      }
+    }
+    const update = (c: ConvoItem): ConvoItem =>
+      c.conversation.id === item.conversation.id ? { ...c, conversation: { ...c.conversation, status: next } } : c;
+    setConversations((prev) => prev.map(update));
+    setSelectedConvo((prev) => (prev ? update(prev) : prev));
+    toast.success(next === 'archived' ? `Archived ${displayName(item.conversation)}` : 'Moved back to inbox');
   };
 
   const handleDeleteConversation = async (item: ConvoItem, e: React.MouseEvent) => {
@@ -319,10 +513,23 @@ export default function AdminDashboard() {
     }
   };
 
+  // Quote every cell, double embedded quotes, and neutralise a leading = + - @ so
+  // spreadsheet apps don't run visitor-written text as a formula
+  const csvCell = (value: string) => {
+    const safe = /^[=+\-@]/.test(value) ? `'${value}` : value;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+
   const exportToCSV = () => {
     let csv = 'Name,Email,Last Message,Date,Status\n';
     conversations.forEach((item) => {
-      csv += `"${item.conversation.visitor_name || 'Anonymous'}","${item.conversation.visitor_email || ''}","${item.latestMessage?.content || ''}","${item.conversation.created_at}","${item.conversation.status}"\n`;
+      csv += [
+        displayName(item.conversation),
+        item.conversation.visitor_email || '',
+        item.latestMessage?.content || '',
+        item.conversation.created_at,
+        item.conversation.status,
+      ].map(csvCell).join(',') + '\n';
     });
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const a = document.createElement('a');
@@ -332,179 +539,271 @@ export default function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const bg = dk ? 'bg-gray-950' : 'bg-gray-50';
-  const surface = dk ? 'bg-gray-900' : 'bg-white';
-  const border = dk ? 'border-gray-800' : 'border-gray-200';
-  const textMuted = dk ? 'text-gray-400' : 'text-gray-500';
+  // Unread count in the browser tab title, so new chats show up from other tabs
+  useEffect(() => {
+    if (!isAuthorized) return;
+    document.title = unreadIds.size > 0 ? `(${unreadIds.size}) Inbox · JDG Admin` : `${PAGE_META[sidebarTab].title} · JDG Admin`;
+  }, [isAuthorized, unreadIds.size, sidebarTab]);
+
+  // Move through the visible conversations with j / k
+  const stepConversation = (direction: 1 | -1) => {
+    if (visibleIds.length === 0) return;
+    const current = selectedConvo ? visibleIds.indexOf(selectedConvo.conversation.id) : -1;
+    const nextIndex = current === -1 ? 0 : Math.min(visibleIds.length - 1, Math.max(0, current + direction));
+    const next = conversations.find((c) => c.conversation.id === visibleIds[nextIndex]);
+    if (next && next.conversation.id !== selectedConvo?.conversation.id) loadMessages(next);
+  };
+
+  const goTo = (section: SidebarTab) => {
+    navigateSection(section);
+    setMobileTab(section === 'messages' ? 'list' : section);
+  };
+
+  shortcutHandlerRef.current = (e: KeyboardEvent) => {
+    if (!isAuthorized) return;
+    const key = e.key.toLowerCase();
+
+    // Cmd/Ctrl+K works everywhere, even while typing
+    if ((e.metaKey || e.ctrlKey) && key === 'k') {
+      e.preventDefault();
+      setShortcutsOpen(false);
+      setPaletteOpen((open) => !open);
+      return;
+    }
+    if (paletteOpen || shortcutsOpen || deleteTarget || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+
+    // "g" then a letter jumps between sections (within 1.2s)
+    if (Date.now() - pendingGRef.current < 1200) {
+      pendingGRef.current = 0;
+      const target = ({ i: 'messages', m: 'monitor', a: 'analytics', l: 'alerts' } as Record<string, SidebarTab>)[key];
+      if (target) {
+        e.preventDefault();
+        goTo(target);
+        return;
+      }
+    }
+
+    if (e.key === '?') {
+      e.preventDefault();
+      setShortcutsOpen(true);
+      return;
+    }
+    if (key === 'g') {
+      pendingGRef.current = Date.now();
+      return;
+    }
+
+    if (sidebarTab !== 'messages') return;
+    switch (key) {
+      case 'j':
+        e.preventDefault();
+        stepConversation(1);
+        break;
+      case 'k':
+        e.preventDefault();
+        stepConversation(-1);
+        break;
+      case 'r':
+        if (selectedConvo) {
+          e.preventDefault();
+          document.getElementById('admin-reply')?.focus();
+        }
+        break;
+      case 'e':
+        if (selectedConvo) {
+          e.preventDefault();
+          handleArchive(selectedConvo);
+        }
+        break;
+    }
+  };
+
+  const paletteCommands: PaletteCommand[] = [
+    { id: 'go-inbox', group: 'Navigation', label: 'Inbox', icon: Inbox, shortcut: ['G', 'I'], keywords: 'messages conversations', run: () => goTo('messages') },
+    { id: 'go-monitor', group: 'Navigation', label: 'Live monitor', icon: Activity, shortcut: ['G', 'M'], keywords: 'realtime activity', run: () => goTo('monitor') },
+    { id: 'go-analytics', group: 'Navigation', label: 'Analytics', icon: BarChart3, shortcut: ['G', 'A'], keywords: 'charts stats metrics', run: () => goTo('analytics') },
+    { id: 'go-alerts', group: 'Navigation', label: 'Alerts', icon: Bell, shortcut: ['G', 'L'], keywords: 'notifications rules', run: () => goTo('alerts') },
+    ...(selectedConvo
+      ? [{
+          id: 'archive-current',
+          group: 'Actions' as const,
+          label: selectedConvo.conversation.status === 'archived'
+            ? `Move ${displayName(selectedConvo.conversation)} to inbox`
+            : `Archive ${displayName(selectedConvo.conversation)}`,
+          icon: Archive,
+          shortcut: ['E'],
+          run: () => handleArchive(selectedConvo),
+        }]
+      : []),
+    ...(unacknowledgedAlerts > 0
+      ? [{
+          id: 'ack-all',
+          group: 'Actions' as const,
+          label: `Acknowledge ${unacknowledgedAlerts} alert${unacknowledgedAlerts === 1 ? '' : 's'}`,
+          icon: CheckCheck,
+          keywords: 'alerts clear',
+          run: () => setAlerts((prev) => prev.map((a) => ({ ...a, acknowledged: true }))),
+        }]
+      : []),
+    { id: 'export', group: 'Actions', label: 'Export conversations as CSV', icon: Download, keywords: 'download spreadsheet', run: exportToCSV },
+    { id: 'theme', group: 'Actions', label: 'Toggle dark / light theme', icon: Moon, keywords: 'appearance mode', run: toggleDarkMode },
+    { id: 'shortcuts', group: 'Actions', label: 'Keyboard shortcuts', icon: Keyboard, shortcut: ['?'], keywords: 'help keys', run: () => setShortcutsOpen(true) },
+    { id: 'site', group: 'Actions', label: 'View portfolio site', icon: ArrowUpRight, keywords: 'home website', run: () => navigate('/') },
+    { id: 'sign-out', group: 'Actions', label: 'Sign out', icon: LogOut, keywords: 'logout log out', run: handleSignOut },
+  ];
 
   if (!isAuthorized) {
     return (
       <AdminLogin
         password={password}
-        onPasswordChange={setPassword}
+        onPasswordChange={(v) => { setPassword(v); if (loginError && lockedSeconds === 0) setLoginError(null); }}
+        remember={remember}
+        onRememberChange={setRemember}
         isLoading={isLoading}
+        error={loginError}
+        lockedSeconds={lockedSeconds}
+        isDemo={!isSupabase}
         onLogin={handleLogin}
         onBack={() => navigate('/')}
-        isDarkMode={dk}
       />
     );
   }
 
-  const sidebarTabs: { id: SidebarTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'messages', label: 'Messages', icon: <Inbox size={16} /> },
-    { id: 'monitor', label: 'Monitor', icon: <Activity size={16} /> },
-    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={16} /> },
-    { id: 'alerts', label: 'Alerts', icon: <Bell size={16} /> },
-  ];
+  const listProps = {
+    conversations,
+    allMessages,
+    selectedId: selectedConvo?.conversation.id ?? null,
+    unreadIds,
+    onSelect: loadMessages,
+    onArchive: handleArchive,
+    onDelete: handleDeleteConversation,
+    onExportCSV: exportToCSV,
+    onBack: () => navigate('/'),
+  };
 
-  const renderCenterContent = () => {
+  const chatProps = {
+    selectedConvo,
+    messages,
+    replyText,
+    onReplyTextChange: setReplyText,
+    onSendReply: handleSendReply,
+    onArchive: handleArchive,
+    onDeleteConversation: handleDeleteConversation,
+  };
+
+  // Monitor / Analytics / Alerts pages (the inbox has its own multi-panel layout)
+  const renderSectionContent = () => {
     switch (sidebarTab) {
       case 'monitor':
-        return <RealTimeMonitor isDarkMode={dk} initialConversationCount={conversations.length} />;
+        return <RealTimeMonitor embedded initialConversationCount={conversations.length} />;
       case 'analytics':
-        return <AnalyticsDashboard isDarkMode={dk} />;
+        return <AnalyticsDashboard embedded />;
       case 'alerts':
-        return <AlertCenter isDarkMode={dk} />;
+        return <AlertCenter embedded alerts={alerts} onAcknowledge={acknowledgeAlert} />;
       default:
-        return (
-          <ChatPanel
-            selectedConvo={selectedConvo}
-            messages={messages}
-            replyText={replyText}
-            isDarkMode={dk}
-            onReplyTextChange={setReplyText}
-            onSendReply={handleSendReply}
-            onQuickReply={handleQuickReply}
-            onDeleteConversation={handleDeleteConversation}
-            onBack={() => setSelectedConvo(null)}
-          />
-        );
+        return null;
     }
   };
 
   const renderMobileContent = () => {
     switch (mobileTab) {
       case 'chat':
-        return (
-          <ChatPanel
-            selectedConvo={selectedConvo}
-            messages={messages}
-            replyText={replyText}
-            isDarkMode={dk}
-            onReplyTextChange={setReplyText}
-            onSendReply={handleSendReply}
-            onQuickReply={handleQuickReply}
-            onDeleteConversation={handleDeleteConversation}
-            onBack={() => { setSelectedConvo(null); setMobileTab('list'); }}
-          />
-        );
+        return <ChatPanel {...chatProps} onBack={() => { setSelectedConvo(null); setMobileTab('list'); }} />;
       case 'monitor':
-        return <RealTimeMonitor isDarkMode={dk} onBack={() => setMobileTab('list')} initialConversationCount={conversations.length} />;
+        return <RealTimeMonitor onBack={() => setMobileTab('list')} initialConversationCount={conversations.length} />;
       case 'analytics':
-        return <AnalyticsDashboard isDarkMode={dk} onBack={() => setMobileTab('list')} />;
+        return <AnalyticsDashboard onBack={() => setMobileTab('list')} />;
       case 'alerts':
-        return <AlertCenter isDarkMode={dk} onBack={() => setMobileTab('list')} />;
+        return <AlertCenter onBack={() => setMobileTab('list')} alerts={alerts} onAcknowledge={acknowledgeAlert} />;
       default:
-        return (
-          <ConversationsList
-            conversations={conversations}
-            filteredConversations={filteredConversations}
-            selectedConvo={selectedConvo}
-            searchQuery={searchQuery}
-            searchAllQuery={searchAllQuery}
-            allMessages={allMessages}
-            searchResults={searchResults}
-            activeSearch={activeSearch}
-            isDarkMode={dk}
-            onLoadMessages={loadMessages}
-            onDeleteConversation={handleDeleteConversation}
-            onExportCSV={exportToCSV}
-            onSetActiveSearch={setActiveSearch}
-            onSearchQueryChange={setSearchQuery}
-            onSearchAllQueryChange={setSearchAllQuery}
-            onBack={() => navigate('/')}
-          />
-        );
+        return <ConversationsList {...listProps} />;
     }
   };
 
+  const pageMeta = PAGE_META[sidebarTab];
+  const pageDescription =
+    sidebarTab === 'messages'
+      ? `${conversations.length} conversation${conversations.length === 1 ? '' : 's'} · ${unreadIds.size} unread · ${stats.todayCount} active today`
+      : pageMeta.description;
+
+  const pageActions =
+    sidebarTab === 'messages' ? (
+      <button
+        onClick={exportToCSV}
+        disabled={conversations.length === 0}
+        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+      >
+        <Download size={14} />
+        Export CSV
+      </button>
+    ) : null;
+
   return (
-    <div className={`h-screen flex flex-col ${bg} overflow-hidden`}>
-      {/* Desktop: sidebar + center + optional right panel */}
-      <div className="hidden md:flex flex-1 min-h-0">
-        {/* Sidebar: tab bar + messages list */}
-        <div className={`w-72 lg:w-80 flex-shrink-0 flex flex-col ${surface} border-r ${border}`}>
-          <div className={`flex border-b ${border} px-2 py-1.5 gap-1`}>
-            {sidebarTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 flex flex-col items-center py-1.5 rounded-lg text-[10px] font-medium transition-all ${
-                  sidebarTab === tab.id
-                    ? 'bg-blue-600 text-white'
-                    : dk
-                      ? 'text-gray-400 hover:bg-gray-800'
-                      : 'text-gray-500 hover:bg-gray-100'
-                }`}
-                title={tab.label}
-              >
-                {tab.icon}
-                <span className="mt-0.5">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ConversationsList
-              conversations={conversations}
-              filteredConversations={filteredConversations}
-              selectedConvo={selectedConvo}
-              searchQuery={searchQuery}
-              searchAllQuery={searchAllQuery}
-              allMessages={allMessages}
-              searchResults={searchResults}
-              activeSearch={activeSearch}
-              isDarkMode={dk}
-              onLoadMessages={loadMessages}
-              onDeleteConversation={handleDeleteConversation}
-              onExportCSV={exportToCSV}
-              onSetActiveSearch={setActiveSearch}
-              onSearchQueryChange={setSearchQuery}
-              onSearchAllQueryChange={setSearchAllQuery}
-              onBack={() => navigate('/')}
-            />
-          </div>
-        </div>
+    <div className="h-dvh flex flex-col bg-background text-foreground overflow-hidden">
+      {/* Desktop: app shell = navigation sidebar + page (header + content) */}
+      {isDesktop ? (
+      <div className="flex flex-1 min-h-0">
+        <AdminSidebar
+          active={sidebarTab}
+          onNavigate={navigateSection}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={toggleSidebar}
+          unreadConversations={unreadIds.size}
+          totalConversations={conversations.length}
+          unacknowledgedAlerts={unacknowledgedAlerts}
+          isLive={isSupabase}
+          onViewSite={() => navigate('/')}
+          onSignOut={handleSignOut}
+          onOpenPalette={() => setPaletteOpen(true)}
+          onShowShortcuts={() => setShortcutsOpen(true)}
+        />
 
-        {/* Center: content switches based on active tab */}
         <div className="flex-1 min-w-0 flex flex-col">
-          {renderCenterContent()}
+          <PageHeader title={pageMeta.title} description={pageDescription} actions={pageActions} />
+
+          <main className="flex-1 min-h-0 flex">
+            {sidebarTab === 'messages' ? (
+              <>
+                {/* Inbox: conversation list | thread | details */}
+                <div className="w-80 flex-shrink-0 flex flex-col bg-card border-r border-border">
+                  <ConversationsList embedded {...listProps} onVisibleChange={setVisibleIds} />
+                </div>
+
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <ChatPanel {...chatProps} onBack={() => setSelectedConvo(null)} />
+                </div>
+
+                {selectedConvo && (
+                  <aside aria-label="Conversation details" className="hidden xl:flex w-72 2xl:w-80 flex-shrink-0 flex-col bg-card border-l border-border">
+                    <ConversationDetails
+                      item={selectedConvo}
+                      messages={messages}
+                      isLive={isSupabase}
+                      onArchive={handleArchive}
+                      onDelete={handleDeleteConversation}
+                    />
+                  </aside>
+                )}
+              </>
+            ) : (
+              // Other sections get the full width, capped so cards don't stretch on wide screens
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="mx-auto flex h-full w-full max-w-5xl flex-col">{renderSectionContent()}</div>
+              </div>
+            )}
+          </main>
         </div>
-
-        {/* Right: basic analytics (only when viewing messages with a conversation) */}
-        {sidebarTab === 'messages' && selectedConvo && (
-          <div className={`hidden lg:flex w-72 xl:w-80 flex-shrink-0 flex-col ${surface} border-l ${border}`}>
-            <AnalyticsPanel stats={stats} conversations={conversations} isDarkMode={dk} />
-          </div>
-        )}
       </div>
-
-      <ConfirmModal
-        open={!!deleteTarget}
-        title="Delete Conversation"
-        message={`Delete conversation with ${deleteTarget?.conversation.visitor_name || 'Anonymous'}? This cannot be undone.`}
-        isDarkMode={dk}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
-
-      {/* Mobile layout */}
-      <div className="flex md:hidden flex-1 min-h-0 flex-col">
+      ) : (
+      // Mobile layout
+      <div className="flex flex-1 min-h-0 flex-col">
         <div className="flex-1 min-h-0 overflow-hidden">
           {renderMobileContent()}
         </div>
 
         {mobileTab !== 'chat' && (
-          <div className={`flex-shrink-0 ${surface} border-t ${border} flex safe-area-pb`}>
+          <div className="flex-shrink-0 bg-card border-t border-border flex pb-[env(safe-area-inset-bottom)]">
             {[
               { id: 'list', icon: Inbox, label: 'Messages' },
               { id: 'monitor', icon: Activity, label: 'Monitor' },
@@ -514,9 +813,10 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setMobileTab(tab.id as any)}
-                className={`flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors ${
-                  mobileTab === tab.id ? 'text-blue-500' : textMuted
-                }`}
+                className={cn(
+                  'flex-1 flex flex-col items-center py-3 gap-0.5 transition-colors',
+                  mobileTab === tab.id ? 'text-brand' : 'text-muted-foreground'
+                )}
               >
                 <tab.icon size={20} />
                 <span className="text-[10px] font-medium">{tab.label}</span>
@@ -525,6 +825,24 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+      )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete Conversation"
+        message={`Delete conversation with ${deleteTarget ? displayName(deleteTarget.conversation) : 'this visitor'}? This cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={paletteCommands}
+        conversations={conversations}
+        onOpenConversation={(item) => { goTo('messages'); loadMessages(item); }}
+      />
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }

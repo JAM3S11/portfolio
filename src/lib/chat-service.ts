@@ -130,32 +130,64 @@ export async function getAllMessages(): Promise<(Message & { conversationId: str
   })) as (Message & { conversationId: string })[];
 }
 
-// Get latest message for each conversation (for admin list)
+// Get latest message for each conversation (for admin list).
+// Two queries in total instead of one extra query per conversation.
 export async function getLatestMessages(): Promise<{conversation: Conversation, latestMessage: Message | null}[]> {
   if (!supabase) return [];
 
-  const conversations = await getConversations();
-  const results = [];
+  const [conversations, { data: messages, error }] = await Promise.all([
+    getConversations(),
+    supabase.from('messages').select('*').order('created_at', { ascending: false }),
+  ]);
 
-  for (const conv of conversations) {
-    const messages = await getMessages(conv.id);
-    results.push({
-      conversation: conv,
-      latestMessage: messages[messages.length - 1] || null
-    });
+  if (error) console.error('Error fetching latest messages:', error);
+
+  // Messages arrive newest first, so the first one seen per conversation is its latest
+  const latestByConversation = new Map<string, Message>();
+  for (const message of (messages ?? []) as Message[]) {
+    if (!latestByConversation.has(message.conversation_id)) {
+      latestByConversation.set(message.conversation_id, message);
+    }
   }
 
-  return results;
+  return conversations.map((conversation) => ({
+    conversation,
+    latestMessage: latestByConversation.get(conversation.id) ?? null,
+  }));
 }
 
-// Update conversation status
-export async function updateConversationStatus(conversationId: string, status: string): Promise<void> {
-  if (!supabase) return;
+// Update conversation status. Returns false if the update failed.
+export async function updateConversationStatus(conversationId: string, status: string): Promise<boolean> {
+  if (!supabase) return false;
 
-  await supabase
+  const { error } = await supabase
     .from('conversations')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', conversationId);
+
+  if (error) {
+    console.error('Error updating conversation status:', error);
+    return false;
+  }
+  return true;
+}
+
+// Subscribe to every new message (admin inbox: live threads, list previews and unread state)
+export function subscribeToAllMessages(callback: (message: Message) => void) {
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel(`all-messages-${crypto.randomUUID?.() || Math.random()}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' },
+      (payload) => callback(payload.new as Message)
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
 // Subscribe to new messages (for real-time updates)

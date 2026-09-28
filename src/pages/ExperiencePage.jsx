@@ -1,5 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Newest first
 const experiences = [
@@ -61,8 +63,12 @@ const ExperiencePage = () => {
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24 });
   const dotTop = useTransform(progress, [0, 1], ['0%', '100%']);
 
+  // Highlights collapse on phones to keep each role short; always open from md up
+  const [expanded, setExpanded] = useState({});
+  const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+
   return (
-    <section id="experience" className="relative bg-background text-foreground px-6 py-24 md:py-32 overflow-hidden">
+    <section id="experience" className="relative bg-background text-foreground px-5 sm:px-6 py-16 sm:py-24 md:py-32 overflow-hidden">
       <div className="max-w-5xl mx-auto">
 
         {/* Heading */}
@@ -71,12 +77,12 @@ const ExperiencePage = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeUp}
-          className="text-center mb-16 md:mb-20"
+          className="text-center mb-10 sm:mb-16 md:mb-20"
         >
           <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
             Where it all started
           </p>
-          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-wide">
+          <h2 className="text-[2rem] leading-tight sm:text-4xl md:text-5xl font-extrabold uppercase tracking-normal sm:tracking-wide">
             Engineered{' '}
             <span className="italic bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600 dark:from-sky-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent pr-1">
               Growth
@@ -85,7 +91,7 @@ const ExperiencePage = () => {
         </motion.div>
 
         {/* Timeline */}
-        <div ref={timelineRef} className="relative flex gap-6 md:gap-14">
+        <div ref={timelineRef} className="relative flex gap-4 sm:gap-6 md:gap-14">
 
           {/* Rail: faint base line, gradient fill and a dot that track scroll */}
           <div className="relative w-3 shrink-0 flex justify-center">
@@ -104,20 +110,24 @@ const ExperiencePage = () => {
           </div>
 
           {/* Entries */}
-          <div className="flex-1 divide-y divide-border">
-            {experiences.map((exp) => (
+          <div className="flex-1 min-w-0 divide-y divide-border">
+            {experiences.map((exp) => {
+              const isOpen = !!expanded[exp.company];
+              const panelId = `highlights-${exp.company.replace(/\W+/g, '-').toLowerCase()}`;
+
+              return (
               <motion.article
                 key={exp.company}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '-80px' }}
                 variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-                className="grid md:grid-cols-[0.9fr_1.1fr] gap-5 md:gap-10 py-10 first:pt-0 last:pb-0"
+                className="grid md:grid-cols-[0.9fr_1.1fr] gap-3 sm:gap-5 md:gap-10 py-8 sm:py-10 first:pt-0 last:pb-0"
               >
                 {/* Left: period, role, company */}
                 <motion.div variants={fadeUp}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+                    <span className="font-mono sm:font-sans text-xs sm:text-lg md:text-xl font-medium sm:font-bold uppercase sm:normal-case tracking-wider sm:tracking-tight text-muted-foreground sm:text-foreground">
                       {exp.period}
                     </span>
                     {exp.current && (
@@ -127,28 +137,54 @@ const ExperiencePage = () => {
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl md:text-2xl font-semibold leading-snug text-foreground">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold leading-snug text-foreground text-balance">
                     {exp.role}
                   </h3>
-                  <p className="mt-1 text-sm font-medium text-cyan-600 dark:text-cyan-400">
+                  <p className="mt-1 text-[13px] sm:text-sm font-medium text-cyan-600 dark:text-cyan-400">
                     {exp.company}
                   </p>
                 </motion.div>
 
                 {/* Right: summary, highlights, tech */}
-                <motion.div variants={fadeUp} className="space-y-4">
-                  <p className="text-sm md:text-base leading-relaxed text-muted-foreground">
+                <motion.div variants={fadeUp} className="space-y-3 sm:space-y-4">
+                  <p className="text-[15px] sm:text-sm md:text-base leading-relaxed text-muted-foreground">
                     {exp.description}
                   </p>
-                  <ul className="space-y-2">
-                    {exp.highlights.map((item) => (
-                      <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
-                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-cyan-500" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <ul className="flex flex-wrap gap-2 pt-1">
+
+                  {/* Mobile-only disclosure for the highlights */}
+                  <button
+                    type="button"
+                    onClick={() => toggle(exp.company)}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    className="md:hidden inline-flex min-h-[44px] items-center gap-1.5 -my-2 text-sm font-medium text-foreground active:opacity-70"
+                  >
+                    {isOpen ? 'Hide highlights' : `Show highlights (${exp.highlights.length})`}
+                    <ChevronDown
+                      size={16}
+                      className={cn('text-muted-foreground transition-transform duration-300', isOpen && 'rotate-180')}
+                    />
+                  </button>
+
+                  {/* Animates height via grid rows; forced open on md+ */}
+                  <div
+                    id={panelId}
+                    className={cn(
+                      'grid transition-[grid-template-rows] duration-300 ease-out md:grid-rows-[1fr]',
+                      isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    )}
+                  >
+                    <ul className="overflow-hidden space-y-2">
+                      {exp.highlights.map((item) => (
+                        <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-cyan-500" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <ul className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
                     {exp.tech.map((t) => (
                       <li
                         key={t}
@@ -160,7 +196,8 @@ const ExperiencePage = () => {
                   </ul>
                 </motion.div>
               </motion.article>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
-import { Github, ArrowUpRight, ArrowRight, Code2, Server, Layers, FileCode, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
+import { Github, ArrowUpRight, ArrowRight, Code2, Server, Layers, FileCode, BookOpen, X } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useDragControls } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useBodyScrollLock, useViewport } from '@/hooks';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -162,7 +163,7 @@ const projects = [
 
 const countFor = (id) => (id === 'all' ? projects.length : projects.filter((p) => p.category === id).length);
 
-const ProjectDetails = ({ project }) => {
+const ProjectDetails = ({ project, showActions = true }) => {
   const { icon: Icon, label } = categoryMeta[project.category];
 
   return (
@@ -218,36 +219,47 @@ const ProjectDetails = ({ project }) => {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
-        {project.live && (
-          <a
-            href={project.live}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:bg-brand hover:text-white transition-colors"
-          >
-            Live demo
-            <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
-        )}
-        {project.github && (
-          <a
-            href={project.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:border-brand/50 transition-colors"
-          >
-            <Github size={15} />
-            Source
-          </a>
-        )}
-        {!project.live && !project.github && (
-          <span className="text-sm text-muted-foreground">Private project</span>
-        )}
-      </div>
+      {showActions && <ProjectActions project={project} className="pt-2" />}
     </motion.div>
   );
 };
+
+// Live demo / Source buttons. `block` makes them equal-width for the mobile sheet footer.
+const ProjectActions = ({ project, block = false, className }) => (
+  <div className={cn('flex items-center gap-3', block ? 'w-full' : 'flex-wrap', className)}>
+    {project.live && (
+      <a
+        href={project.live}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          'group inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground text-background text-sm font-medium hover:bg-brand hover:text-white active:scale-[0.98] transition',
+          block ? 'h-12 flex-1' : 'px-5 py-2.5'
+        )}
+      >
+        Live demo
+        <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      </a>
+    )}
+    {project.github && (
+      <a
+        href={project.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          'inline-flex items-center justify-center gap-1.5 rounded-full border border-border text-sm font-medium text-foreground hover:border-brand/50 active:scale-[0.98] transition',
+          block ? 'h-12 flex-1' : 'px-5 py-2.5'
+        )}
+      >
+        <Github size={15} />
+        Source
+      </a>
+    )}
+    {!project.live && !project.github && (
+      <span className={cn('text-sm text-muted-foreground', block && 'w-full text-center py-3')}>Private project</span>
+    )}
+  </div>
+);
 
 const ProjectCard = ({ project, selected, wide, onSelect, cardRef }) => (
   <motion.button
@@ -261,12 +273,13 @@ const ProjectCard = ({ project, selected, wide, onSelect, cardRef }) => (
     aria-pressed={selected}
     aria-label={`Show details for ${project.title}`}
     className={cn(
-      'group relative overflow-hidden rounded-2xl border text-left bg-card transition-[border-color,box-shadow,opacity] duration-300',
+      'group relative overflow-hidden rounded-2xl border text-left bg-card transition-[border-color,box-shadow,opacity,transform] duration-300 active:scale-[0.985]',
       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-      wide ? 'sm:col-span-2 aspect-[16/8]' : 'aspect-[16/11]',
+      wide ? 'sm:col-span-2 aspect-[16/10] sm:aspect-[16/8]' : 'aspect-[16/10] sm:aspect-[16/11]',
+      // Selection only means something on desktop, where details sit beside the grid
       selected
-        ? 'border-cyan-500/60 shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_12px_40px_-12px_rgba(56,189,248,0.45)]'
-        : 'border-border opacity-70 hover:opacity-100 hover:border-foreground/20'
+        ? 'border-border lg:border-cyan-500/60 lg:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_12px_40px_-12px_rgba(56,189,248,0.45)]'
+        : 'border-border lg:opacity-70 hover:opacity-100 hover:border-foreground/20'
     )}
   >
     {project.image ? (
@@ -282,24 +295,119 @@ const ProjectCard = ({ project, selected, wide, onSelect, cardRef }) => (
       </div>
     )}
 
+    {/* Status pill (mobile/tablet; desktop shows status in the details column) */}
+    <span className="lg:hidden absolute top-3 left-3 rounded-full border border-white/20 bg-black/50 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
+      {project.status}
+    </span>
+
     {/* Caption */}
-    <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/85 via-black/40 to-transparent p-4 pt-10">
-      <p className="text-sm font-semibold text-white">{project.title}</p>
-      <p className="text-xs text-white/70">{project.tagline}</p>
+    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-linear-to-t from-black/85 via-black/40 to-transparent p-4 pt-10">
+      <div className="min-w-0">
+        <p className="truncate text-[15px] sm:text-sm font-semibold text-white">{project.title}</p>
+        <p className="truncate text-xs text-white/70">{project.tagline}</p>
+      </div>
+      <span className="lg:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md">
+        <ArrowUpRight size={16} />
+      </span>
     </div>
 
     {selected && (
-      <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#38bdf8]" />
+      <span className="hidden lg:block absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#38bdf8]" />
     )}
   </motion.button>
 );
 
+// Mobile/tablet bottom sheet with the full project details.
+// Drag the handle (or swipe the header) down to dismiss; the body scrolls independently.
+const ProjectSheet = ({ project, onClose }) => {
+  const dragControls = useDragControls();
+
+  useEffect(() => {
+    const onKeyDown = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm lg:hidden"
+        aria-hidden="true"
+      />
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${project.title} details`}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120 || info.velocity.y > 600) onClose();
+        }}
+        className="fixed inset-x-0 bottom-0 z-[81] flex max-h-[90dvh] flex-col rounded-t-3xl border-t border-border bg-card shadow-2xl lg:hidden sm:mx-auto sm:max-w-xl sm:border-x"
+      >
+        {/* Drag handle + close */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="relative shrink-0 cursor-grab touch-none px-5 pt-3 pb-2 active:cursor-grabbing"
+        >
+          <div className="mx-auto h-1.5 w-10 rounded-full bg-border" />
+          <button
+            type="button"
+            onClick={onClose}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="Close details"
+            className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground active:bg-muted"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6">
+          <div className="relative mb-5 aspect-[16/9] overflow-hidden rounded-2xl border border-border bg-muted">
+            {project.image ? (
+              <img src={project.image} alt={`${project.title} screenshot`} className="h-full w-full object-cover object-top" />
+            ) : (
+              <div className="flex h-full items-center justify-center font-mono text-xl font-bold text-muted-foreground/60">
+                {project.title}
+              </div>
+            )}
+          </div>
+          <ProjectDetails project={project} showActions={false} />
+        </div>
+
+        {/* Pinned actions */}
+        <div className="shrink-0 border-t border-border bg-card/95 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
+          <ProjectActions project={project} block />
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
 const ProjectsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedTitle, setSelectedTitle] = useState(projects[0].title);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  // The sheet only exists below lg, so treat it as closed on desktop widths
+  const isDesktop = useViewport(1024);
+  const showSheet = sheetOpen && !isDesktop;
+  useBodyScrollLock(showSheet);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   const railRef = useRef(null);
-  const detailsRef = useRef(null);
   const cardRefs = useRef({});
 
   // Rail dot position (px from top of the rail), eased with a spring
@@ -337,14 +445,12 @@ const ProjectsPage = () => {
 
   const handleSelect = (title) => {
     setSelectedTitle(title);
-    // On stacked layouts the details sit above the grid, so bring them into view
-    if (window.innerWidth < 1024) {
-      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Below lg there is no details column, so open the bottom sheet instead
+    if (window.innerWidth < 1024) setSheetOpen(true);
   };
 
   return (
-    <section id="projects" className="bg-background text-foreground px-6 py-24 md:py-32">
+    <section id="projects" className="bg-background text-foreground px-5 sm:px-6 py-16 sm:py-24 md:py-32">
       <div className="max-w-6xl mx-auto">
 
         {/* Heading */}
@@ -353,12 +459,12 @@ const ProjectsPage = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10"
+          className="text-center mb-8 sm:mb-10"
         >
           <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-3">
             Where ideas become systems
           </p>
-          <h2 className="text-3xl md:text-5xl font-extrabold uppercase tracking-wide">
+          <h2 className="text-[2rem] leading-tight sm:text-4xl md:text-5xl font-extrabold uppercase tracking-normal sm:tracking-wide">
             Product{' '}
             <span className="italic bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600 dark:from-sky-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent pr-1">
               Builds
@@ -366,9 +472,9 @@ const ProjectsPage = () => {
           </h2>
         </motion.div>
 
-        {/* Filters */}
-        <div className="flex justify-center mb-12 md:mb-16">
-          <div role="tablist" aria-label="Filter projects" className="isolate inline-flex flex-wrap justify-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+        {/* Filters: one scrollable row on phones instead of wrapping */}
+        <div className="-mx-5 sm:mx-0 mb-8 sm:mb-12 md:mb-16 flex overflow-x-auto px-5 sm:px-0 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="Filter projects" className="isolate mx-auto inline-flex shrink-0 flex-nowrap gap-1 rounded-full border border-border bg-muted/40 p-1">
             {categories.map((cat) => {
               const isActive = activeFilter === cat.id;
               return (
@@ -378,7 +484,7 @@ const ProjectsPage = () => {
                   aria-selected={isActive}
                   onClick={() => handleFilter(cat.id)}
                   className={cn(
-                    'relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                    'relative flex shrink-0 items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-full px-3.5 sm:px-4 py-2 sm:py-1.5 text-sm font-medium transition-colors',
                     isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -399,9 +505,9 @@ const ProjectsPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6">
 
-          {/* Left: details of the selected project */}
-          <div ref={detailsRef} className="lg:col-span-4 scroll-mt-28">
-            <div className="lg:sticky lg:top-28">
+          {/* Left: details of the selected project (desktop only; phones use the sheet) */}
+          <div className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-28">
               <AnimatePresence mode="wait">
                 <ProjectDetails key={selected.title} project={selected} />
               </AnimatePresence>
@@ -421,7 +527,7 @@ const ProjectsPage = () => {
           </div>
 
           {/* Right: selectable project previews */}
-          <motion.div layout className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
+          <motion.div layout className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 content-start">
             {filtered.map((project, i) => (
               <ProjectCard
                 key={project.title}
@@ -435,6 +541,10 @@ const ProjectsPage = () => {
           </motion.div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showSheet && <ProjectSheet key={selected.title} project={selected} onClose={closeSheet} />}
+      </AnimatePresence>
     </section>
   );
 };

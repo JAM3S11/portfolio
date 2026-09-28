@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Bell, BellOff, ChevronLeft, CheckCheck, Settings,
+  Bell, ChevronLeft, CheckCheck, Settings2, AlertTriangle, AlertOctagon, RotateCcw,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   getAlertRules,
   updateAlertRule,
@@ -11,203 +11,292 @@ import {
   type AlertEvent,
   type AlertRule,
 } from '@/lib/alert-service';
+import { formatRelativeTime } from '@/pages/admin/constants';
 
 interface AlertCenterProps {
-  isDarkMode: boolean;
   onBack?: () => void;
+  /** Hide the title when the admin shell provides a page header */
+  embedded?: boolean;
+  /**
+   * Alerts owned by a parent that stays mounted, so alerts raised while this page is closed
+   * aren't lost. Without them the component collects alerts itself while it's on screen.
+   */
+  alerts?: AlertEvent[];
+  onAcknowledge?: (alertId: string) => void;
 }
 
-export default function AlertCenter({ isDarkMode, onBack }: AlertCenterProps) {
-  const dk = isDarkMode;
-  const surface = dk ? 'bg-gray-900' : 'bg-white';
-  const border = dk ? 'border-gray-800' : 'border-gray-200';
-  const textPrimary = dk ? 'text-white' : 'text-gray-900';
-  const textMuted = dk ? 'text-gray-400' : 'text-gray-500';
-  const inputBg = dk
-    ? 'bg-gray-800 text-white placeholder-gray-500'
-    : 'bg-gray-100 text-gray-900 placeholder-gray-400';
+type Severity = AlertEvent['severity'];
 
-  const [alerts, setAlerts] = useState<AlertEvent[]>([]);
+// Severity always shows as icon + label; color is never the only cue
+const SEVERITY: Record<Severity, { label: string; color: string; icon: typeof Bell }> = {
+  low: { label: 'Low', color: 'var(--muted-foreground)', icon: Bell },
+  medium: { label: 'Medium', color: 'var(--status-warning)', icon: AlertTriangle },
+  high: { label: 'High', color: 'var(--status-serious)', icon: AlertTriangle },
+  critical: { label: 'Critical', color: 'var(--status-critical)', icon: AlertOctagon },
+};
+
+const SEVERITY_ORDER: Severity[] = ['critical', 'high', 'medium', 'low'];
+
+const RULE_DESCRIPTION: Record<AlertRule['type'], (r: AlertRule) => string> = {
+  latency: (r) => `An AI answer takes longer than ${(r.threshold / 1000).toFixed(1)}s`,
+  error_rate: (r) => `Errors exceed ${r.threshold}% of AI answers`,
+  token_anomaly: (r) => `Token usage exceeds ${r.threshold.toLocaleString()} in one answer`,
+  new_conversation: () => 'A visitor starts a new conversation',
+  cost_threshold: (r) => `Estimated spend passes ${r.threshold}`,
+};
+
+function SeverityBadge({ severity }: { severity: Severity }) {
+  const s = SEVERITY[severity];
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+      <s.icon size={13} style={{ color: s.color }} aria-hidden="true" />
+      {s.label}
+    </span>
+  );
+}
+
+export default function AlertCenter({
+  onBack,
+  embedded = false,
+  alerts: controlledAlerts,
+  onAcknowledge,
+}: AlertCenterProps) {
+  const isControlled = controlledAlerts !== undefined;
+  const [localAlerts, setLocalAlerts] = useState<AlertEvent[]>([]);
+  const alerts = isControlled ? controlledAlerts : localAlerts;
   const [rules, setRules] = useState<AlertRule[]>(getAlertRules());
-  const [showConfig, setShowConfig] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'open' | 'acknowledged' | 'all'>('open');
 
   useEffect(() => {
-    const unsub = subscribeToAlerts((alert) => {
-      setAlerts((prev) => [alert, ...prev].slice(0, 100));
-    });
-    return unsub;
-  }, []);
+    if (isControlled) return;
+    return subscribeToAlerts((alert) => setLocalAlerts((prev) => [alert, ...prev].slice(0, 100)));
+  }, [isControlled]);
 
-  function handleToggleRule(ruleId: string) {
-    const rule = rules.find((r) => r.id === ruleId);
-    if (!rule) return;
-    const updated = updateAlertRule(ruleId, { enabled: !rule.enabled });
-    setRules(updated);
-  }
+  const acknowledge = (alertId: string) => {
+    if (onAcknowledge) onAcknowledge(alertId);
+    else setLocalAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, acknowledged: true } : a)));
+  };
 
-  function handleReset() {
-    const updated = resetAlertRules();
-    setRules(updated);
-  }
+  const openAlerts = alerts.filter((a) => !a.acknowledged);
 
-  function handleAcknowledge(alertId: string) {
-    setAlerts((prev) =>
-      prev.map((a) =>
-        a.id === alertId ? { ...a, acknowledged: true } : a
-      )
+  const visible = useMemo(
+    () =>
+      alerts.filter(
+        (a) =>
+          (severityFilter === 'all' || a.severity === severityFilter) &&
+          (statusFilter === 'all' || (statusFilter === 'open' ? !a.acknowledged : a.acknowledged))
+      ),
+    [alerts, severityFilter, statusFilter]
+  );
+
+  const severityCount = (s: Severity) => openAlerts.filter((a) => a.severity === s).length;
+
+  const chip = (active: boolean) =>
+    cn(
+      'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+      active ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground'
     );
-  }
-
-  const severityStyles: Record<string, string> = {
-    low: dk ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200',
-    medium: dk ? 'bg-amber-900/10 border-amber-900/20' : 'bg-amber-50 border-amber-200',
-    high: dk ? 'bg-orange-900/10 border-orange-900/20' : 'bg-orange-50 border-orange-200',
-    critical: dk ? 'bg-red-900/10 border-red-900/20' : 'bg-red-50 border-red-200',
-  };
-
-  const severityDots: Record<string, string> = {
-    low: 'bg-gray-400',
-    medium: 'bg-amber-500',
-    high: 'bg-orange-500',
-    critical: 'bg-red-500',
-  };
-
-  const unacknowledgedCount = alerts.filter((a) => !a.acknowledged).length;
 
   return (
-    <div className="flex flex-col h-full">
-      <div
-        className={`px-4 pt-4 pb-3 ${surface} border-b ${border} flex-shrink-0`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className={`p-1.5 rounded-lg ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-              >
-                <ChevronLeft size={18} className={textMuted} />
-              </button>
-            )}
-            <Bell size={16} className="text-amber-500" />
-            <h2 className={`text-base font-semibold ${textPrimary}`}>Alerts</h2>
-            {unacknowledgedCount > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-500">
-                {unacknowledgedCount}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className={`p-1.5 rounded-lg ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
-            title="Alert settings"
-          >
-            <Settings size={16} className={textMuted} />
-          </button>
+    <div className="flex h-full flex-col">
+      {!embedded && (
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-card px-4 pt-4 pb-3">
+          {onBack && (
+            <button onClick={onBack} aria-label="Back" className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          <h2 className="text-base font-semibold text-foreground">Alerts</h2>
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {showConfig ? (
-          <div className={`${surface} rounded-2xl p-4 border ${border} space-y-3`}>
-            <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
-              Alert Rules
-            </p>
-            {rules.map((rule) => (
-              <div
-                key={rule.id}
-                className={`flex items-center justify-between p-3 rounded-xl ${
-                  dk ? 'bg-gray-800/50' : 'bg-gray-50'
-                }`}
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-5 p-4 md:p-6">
+          {/* Summary by severity (open alerts) */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {SEVERITY_ORDER.map((s) => {
+              const meta = SEVERITY[s];
+              return (
+                <button
+                  key={s}
+                  onClick={() => { setSeverityFilter(severityFilter === s ? 'all' : s); setStatusFilter('open'); }}
+                  aria-pressed={severityFilter === s}
+                  className={cn(
+                    'rounded-2xl border bg-card p-4 text-left transition-colors',
+                    severityFilter === s ? 'border-foreground/40' : 'border-border hover:border-foreground/20'
+                  )}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <meta.icon size={13} style={{ color: meta.color }} aria-hidden="true" />
+                    {meta.label}
+                  </span>
+                  <p className="mt-2 text-2xl font-semibold leading-none text-foreground">{severityCount(s)}</p>
+                  <p className="mt-1.5 text-xs text-muted-foreground">open</p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* One filter row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(['open', 'acknowledged', 'all'] as const).map((s) => (
+                <button key={s} onClick={() => setStatusFilter(s)} aria-pressed={statusFilter === s} className={chip(statusFilter === s)}>
+                  {s === 'open' ? `Open ${openAlerts.length}` : s === 'acknowledged' ? 'Acknowledged' : 'All'}
+                </button>
+              ))}
+              {severityFilter !== 'all' && (
+                <button onClick={() => setSeverityFilter('all')} className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
+                  Clear “{SEVERITY[severityFilter].label}”
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openAlerts.forEach((a) => acknowledge(a.id))}
+                disabled={openAlerts.length === 0}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               >
+                <CheckCheck size={14} />
+                Acknowledge all
+              </button>
+              <button
+                onClick={() => setShowRules((v) => !v)}
+                aria-expanded={showRules}
+                className={cn(
+                  'inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors',
+                  showRules ? 'border-foreground bg-foreground text-background' : 'border-border text-foreground hover:bg-muted'
+                )}
+              >
+                <Settings2 size={14} />
+                Rules
+              </button>
+            </div>
+          </div>
+
+          {showRules && (
+            <section className="overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3 md:px-5">
                 <div>
-                  <p className={`text-xs font-medium ${textPrimary}`}>{rule.label}</p>
-                  <p className={`text-[10px] ${textMuted}`}>
-                    {rule.type === 'latency'
-                      ? `Threshold: >${rule.threshold}ms`
-                      : rule.type === 'error_rate'
-                        ? `Threshold: >${rule.threshold}%`
-                        : 'Triggers on new conversation'}
-                  </p>
+                  <h3 className="text-sm font-semibold text-foreground">Alert rules</h3>
+                  <p className="text-xs text-muted-foreground">Rules apply to this browser session</p>
                 </div>
                 <button
-                  onClick={() => handleToggleRule(rule.id)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    rule.enabled
-                      ? 'bg-emerald-500/20 text-emerald-500'
-                      : dk
-                        ? 'bg-gray-700 text-gray-500'
-                        : 'bg-gray-200 text-gray-400'
-                  }`}
+                  onClick={() => setRules(resetAlertRules())}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  {rule.enabled ? (
-                    <Bell size={14} />
-                  ) : (
-                    <BellOff size={14} />
-                  )}
+                  <RotateCcw size={12} />
+                  Reset to defaults
                 </button>
               </div>
-            ))}
-            <button
-              onClick={handleReset}
-              className={`w-full py-2 rounded-xl text-xs font-medium transition-colors ${
-                dk
-                  ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              Reset to defaults
-            </button>
-          </div>
-        ) : alerts.length === 0 ? (
-          <div className={`py-16 text-center ${textMuted}`}>
-            <Bell size={36} className="mx-auto mb-3 opacity-20" />
-            <p className="text-sm">No alerts yet</p>
-            <p className="text-xs mt-1 opacity-60">
-              Alerts will appear here when thresholds are exceeded
-            </p>
-          </div>
-        ) : (
-          <AnimatePresence>
-            {alerts.map((alert) => (
-              <motion.div
-                key={alert.id}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`rounded-xl p-3 border ${severityStyles[alert.severity]} ${
-                  alert.acknowledged ? 'opacity-60' : ''
-                }`}
-              >
-                <div className="flex items-start gap-2.5">
-                  <span
-                    className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${severityDots[alert.severity]}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-xs font-medium ${textPrimary} ${
-                        alert.acknowledged ? 'line-through' : ''
-                      }`}
-                    >
-                      {alert.message}
-                    </p>
-                    <p className={`text-[10px] mt-0.5 ${textMuted}`}>
-                      {new Date(alert.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  {!alert.acknowledged && (
+              <ul className="divide-y divide-border">
+                {rules.map((rule) => (
+                  <li key={rule.id} className="flex items-center justify-between gap-4 px-4 py-3 md:px-5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{rule.label}</p>
+                      <p className="text-xs text-muted-foreground">{RULE_DESCRIPTION[rule.type]?.(rule) ?? ''}</p>
+                    </div>
+                    {/* Switch */}
                     <button
-                      onClick={() => handleAcknowledge(alert.id)}
-                      className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors"
-                      title="Acknowledge"
+                      role="switch"
+                      aria-checked={rule.enabled}
+                      aria-label={`${rule.label} alerts`}
+                      onClick={() => setRules(updateAlertRule(rule.id, { enabled: !rule.enabled }))}
+                      className={cn(
+                        'relative h-5 w-9 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+                        rule.enabled ? 'bg-foreground' : 'bg-muted-foreground/30'
+                      )}
                     >
-                      <CheckCheck size={12} />
+                      <span
+                        className={cn(
+                          'absolute top-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform',
+                          rule.enabled ? 'translate-x-4' : 'translate-x-0.5'
+                        )}
+                      />
                     </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Alerts */}
+          <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            {visible.length === 0 ? (
+              <div className="px-5 py-14 text-center">
+                <Bell size={26} className="mx-auto mb-3 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-foreground">
+                  {alerts.length === 0 ? 'No alerts yet' : 'Nothing matches these filters'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {alerts.length === 0
+                    ? 'Alerts appear here when an enabled rule is triggered.'
+                    : 'Try showing all statuses or clearing the severity filter.'}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Table on larger screens */}
+                <table className="hidden w-full text-left text-xs md:table">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-2 font-medium">Severity</th>
+                      <th className="px-4 py-2 font-medium">Alert</th>
+                      <th className="px-4 py-2 font-medium">When</th>
+                      <th className="px-5 py-2 text-right font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {visible.map((alert) => (
+                      <tr key={alert.id} className={cn('hover:bg-muted/40', alert.acknowledged && 'text-muted-foreground')}>
+                        <td className="whitespace-nowrap px-5 py-2.5"><SeverityBadge severity={alert.severity} /></td>
+                        <td className={cn('px-4 py-2.5', alert.acknowledged ? 'text-muted-foreground' : 'text-foreground')}>{alert.message}</td>
+                        <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground" title={new Date(alert.created_at).toLocaleString()}>
+                          {formatRelativeTime(alert.created_at)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-2.5 text-right">
+                          {alert.acknowledged ? (
+                            <span className="inline-flex items-center gap-1 text-muted-foreground"><CheckCheck size={12} /> Acknowledged</span>
+                          ) : (
+                            <button
+                              onClick={() => acknowledge(alert.id)}
+                              className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
+                            >
+                              Acknowledge
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Cards on phones */}
+                <ul className="divide-y divide-border md:hidden">
+                  {visible.map((alert) => (
+                    <li key={alert.id} className="space-y-1.5 px-4 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <SeverityBadge severity={alert.severity} />
+                        <span className="text-[11px] text-muted-foreground">{formatRelativeTime(alert.created_at)}</span>
+                      </div>
+                      <p className={cn('text-sm', alert.acknowledged ? 'text-muted-foreground' : 'text-foreground')}>{alert.message}</p>
+                      {!alert.acknowledged && (
+                        <button
+                          onClick={() => acknowledge(alert.id)}
+                          className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground active:bg-muted"
+                        >
+                          Acknowledge
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

@@ -1,43 +1,49 @@
-import { useRef, useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useRef, useEffect, useState, Fragment } from 'react';
+import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
-  ChevronLeft, Send, MessageCircle, CheckCheck, Trash2, Brain,
+  ChevronLeft, MessageCircle, Trash2, Brain, Archive, ArchiveRestore, ArrowUp, Zap, Sparkles, Loader2,
 } from 'lucide-react';
-import { INTENT_LABELS, INTENT_COLORS, QUICK_REPLIES, formatTime } from './constants';
-import type { ConvoItem, MessageItem } from './types';
+import { cn } from '@/lib/utils';
+import { markdownComponents } from '@/components/chat/ChatMessage';
+import { INTENT_LABELS, INTENT_COLORS, QUICK_REPLIES, formatTime, displayName, avatarInitial } from './constants';
+import type { ConvoItem, MessageItem, MessageSender } from './types';
 import AITraceViewer from '@/components/admin/AITraceViewer';
 
 interface ChatPanelProps {
   selectedConvo: ConvoItem | null;
   messages: MessageItem[];
   replyText: string;
-  isDarkMode: boolean;
   onReplyTextChange: (v: string) => void;
   onSendReply: () => void;
-  onQuickReply: (reply: string) => void;
+  onArchive: (item: ConvoItem) => void;
   onDeleteConversation: (item: ConvoItem, e: React.MouseEvent) => void;
   onBack: () => void;
 }
+
+const iconButton = 'p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors';
+
+const dayLabel = (iso: string) => {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+};
 
 export default function ChatPanel({
   selectedConvo,
   messages,
   replyText,
-  isDarkMode,
   onReplyTextChange,
   onSendReply,
-  onQuickReply,
+  onArchive,
   onDeleteConversation,
   onBack,
 }: ChatPanelProps) {
-  const dk = isDarkMode;
-  const surface = dk ? 'bg-gray-900' : 'bg-white';
-  const border = dk ? 'border-gray-800' : 'border-gray-200';
-  const textPrimary = dk ? 'text-white' : 'text-gray-900';
-  const textMuted = dk ? 'text-gray-400' : 'text-gray-500';
-  const inputBg = dk
-    ? 'bg-gray-800 text-white placeholder-gray-500'
-    : 'bg-gray-100 text-gray-900 placeholder-gray-400';
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showTrace, setShowTrace] = useState(false);
 
@@ -45,168 +51,277 @@ export default function ChatPanel({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  if (!selectedConvo) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-background text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card">
+          <MessageCircle size={24} className="text-muted-foreground" />
+        </div>
+        <p className="text-sm font-medium text-foreground">No conversation selected</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pick one from the list, or press <kbd className="rounded border border-border px-1 font-mono text-[10px]">/</kbd> to search.
+        </p>
+      </div>
+    );
+  }
+
+  const { conversation } = selectedConvo;
+  const archived = conversation.status === 'archived';
+
   return (
-    <div className="flex flex-col h-full">
-      <div
-        className={`px-4 py-3 ${surface} border-b ${border} flex items-center gap-3 flex-shrink-0`}
-      >
-        <button
-          onClick={onBack}
-          className={`md:hidden p-1.5 rounded-lg ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
-        >
-          <ChevronLeft size={18} className={textMuted} />
+    <div className="flex flex-col h-full bg-background">
+      <div className="px-4 py-3 bg-card border-b border-border flex items-center gap-3 flex-shrink-0">
+        <button onClick={onBack} aria-label="Back to conversations" className={cn('md:hidden', iconButton)}>
+          <ChevronLeft size={18} />
         </button>
 
-        {selectedConvo ? (
-          <>
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${dk ? 'bg-gray-800' : 'bg-gray-100'}`}
-            >
-              <span className={`text-sm font-semibold ${dk ? 'text-gray-300' : 'text-gray-600'}`}>
-                {(selectedConvo.conversation.visitor_name || 'A')[0].toUpperCase()}
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-muted ring-1 ring-border">
+          <span className="text-sm font-semibold text-muted-foreground">{avatarInitial(conversation)}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate text-foreground">{displayName(conversation)}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {conversation.visitor_email && (
+              <p className="text-xs truncate text-muted-foreground">{conversation.visitor_email}</p>
+            )}
+            {conversation.visitor_intent && INTENT_LABELS[conversation.visitor_intent] && (
+              <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full', INTENT_COLORS[conversation.visitor_intent] || 'bg-muted text-muted-foreground')}>
+                {INTENT_LABELS[conversation.visitor_intent]}
               </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-semibold truncate ${textPrimary}`}>
-                {selectedConvo.conversation.visitor_name || 'Anonymous'}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                {selectedConvo.conversation.visitor_email && (
-                  <p className={`text-xs truncate ${textMuted}`}>
-                    {selectedConvo.conversation.visitor_email}
-                  </p>
-                )}
-                {selectedConvo.conversation.visitor_intent && (
-                  <span
-                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                      INTENT_COLORS[selectedConvo.conversation.visitor_intent] ||
-                      'bg-gray-500/15 text-gray-400'
-                    }`}
-                  >
-                    {INTENT_LABELS[selectedConvo.conversation.visitor_intent]}
-                  </span>
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className={`text-sm ${textMuted}`}>Select a conversation</p>
-        )}
+            )}
+            {archived && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">Archived</span>
+            )}
+          </div>
+        </div>
 
-        {selectedConvo && (
-          <>
-            <button
-              onClick={() => setShowTrace(!showTrace)}
-              className={`p-1.5 rounded-lg transition-colors ${
-                showTrace
-                  ? 'bg-purple-500/20 text-purple-500'
-                  : dk
-                    ? 'hover:bg-gray-800 text-gray-400'
-                    : 'hover:bg-gray-100 text-gray-500'
-              }`}
-              title="AI Trace"
-            >
-              <Brain size={16} />
-            </button>
-            <button
-              onClick={(e) => onDeleteConversation(selectedConvo, e)}
-              className={`p-1.5 rounded-lg ${dk ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'} transition-colors`}
-              title="Delete conversation"
-            >
-              <Trash2 size={16} />
-            </button>
-          </>
-        )}
+        {/* On wide screens these live in the details panel */}
+        <div className="flex items-center gap-0.5 xl:hidden">
+          <button
+            onClick={() => setShowTrace(!showTrace)}
+            aria-pressed={showTrace}
+            aria-label="Toggle AI trace"
+            title="AI trace"
+            className={cn(
+              'p-1.5 rounded-lg transition-colors',
+              showTrace ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <Brain size={16} />
+          </button>
+          <button
+            onClick={() => onArchive(selectedConvo)}
+            aria-label={archived ? 'Move to inbox' : 'Archive conversation'}
+            title={archived ? 'Move to inbox' : 'Archive'}
+            className={iconButton}
+          >
+            {archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+          </button>
+          <button
+            onClick={(e) => onDeleteConversation(selectedConvo, e)}
+            aria-label="Delete conversation"
+            title="Delete conversation"
+            className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-500/15 transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* AI Trace Panel */}
-      {selectedConvo && showTrace && (
-        <div className="flex-shrink-0 border-b border-gray-800 max-h-48 overflow-y-auto px-4 py-3">
-          <AITraceViewer conversationId={selectedConvo.conversation.id} isDarkMode={dk} />
+      {showTrace && (
+        <div className="xl:hidden flex-shrink-0 border-b border-border max-h-56 overflow-y-auto px-4 py-3">
+          <AITraceViewer conversationId={conversation.id} />
         </div>
       )}
 
-      {selectedConvo ? (
-        <>
-          {/* Messages scroll area */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-            <AnimatePresence>
-              {messages.map((msg, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`flex ${msg.role === 'bot' ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div
-                    className={`max-w-[78%] sm:max-w-[65%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      msg.role === 'bot'
-                        ? `${dk ? 'bg-gray-800 text-gray-100' : 'bg-gray-100 text-gray-900'} rounded-tl-sm`
-                        : 'bg-blue-600 text-white rounded-tr-sm'
-                    }`}
-                  >
-                    <p>{msg.content}</p>
-                    <div
-                      className={`flex items-center justify-end gap-1 mt-1 ${msg.role === 'bot' ? textMuted : 'text-blue-200'}`}
-                    >
-                      <span className="text-[10px]">{formatTime(msg.created_at)}</span>
-                      {msg.role === 'bot' && <CheckCheck size={11} />}
-                    </div>
+      {/* Thread */}
+      <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+        <div className="mx-auto max-w-3xl">
+          {messages.map((msg, idx) => {
+            const prev = messages[idx - 1];
+            const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(msg.created_at).toDateString();
+            const startsGroup = newDay || !prev || prev.sender !== msg.sender;
+            return (
+              <Fragment key={msg.id ?? `pending-${idx}`}>
+                {newDay && (
+                  <div className="my-5 flex items-center gap-3" role="separator">
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="text-[11px] font-medium text-muted-foreground">{dayLabel(msg.created_at)}</span>
+                    <span className="h-px flex-1 bg-border" />
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div
-            className={`px-4 py-2 border-t ${border} flex gap-2 overflow-x-auto flex-shrink-0 scrollbar-none`}
-          >
-            {QUICK_REPLIES.map((reply, idx) => (
-              <button
-                key={idx}
-                onClick={() => onQuickReply(reply)}
-                className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition-colors ${
-                  dk
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {reply.length > 28 ? `${reply.slice(0, 28)}\u2026` : reply}
-              </button>
-            ))}
-          </div>
-
-          <div className={`px-4 py-3 border-t ${border} ${surface} flex-shrink-0`}>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={replyText}
-                onChange={(e) => onReplyTextChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSendReply()}
-                placeholder="Type a reply\u2026"
-                className={`flex-1 px-4 py-2.5 rounded-xl text-sm ${inputBg} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
-              />
-              <button
-                onClick={onSendReply}
-                disabled={!replyText.trim()}
-                className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                <Send size={15} />
-              </button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <div className={`text-center ${textMuted}`}>
-            <MessageCircle size={44} className="mx-auto mb-3 opacity-20" />
-            <p className="text-base font-light">Select a conversation</p>
-            <p className="text-xs mt-1 opacity-60">to start replying</p>
-          </div>
+                )}
+                <MessageBubble message={msg} showLabel={startsGroup} visitorName={displayName(conversation)} />
+              </Fragment>
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
+      </div>
+
+      <Composer value={replyText} onChange={onReplyTextChange} onSend={onSendReply} archived={archived} />
+    </div>
+  );
+}
+
+const SENDER_LABEL: Record<MessageSender, string> = { visitor: '', ai: 'AI assistant', you: 'You' };
+
+function MessageBubble({ message, showLabel, visitorName }: { message: MessageItem; showLabel: boolean; visitorName: string }) {
+  const isVisitor = message.sender === 'visitor';
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
+      className={cn('flex flex-col', isVisitor ? 'items-start' : 'items-end', showLabel ? 'mt-4' : 'mt-1')}
+    >
+      {showLabel && (
+        <p className="mb-1 flex items-center gap-1 px-1 text-[11px] font-medium text-muted-foreground">
+          {message.sender === 'ai' && <Sparkles size={11} className="text-brand" />}
+          {isVisitor ? visitorName : SENDER_LABEL[message.sender]}
+        </p>
       )}
+      <div
+        className={cn(
+          'max-w-[85%] lg:max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words',
+          isVisitor && 'bg-muted text-foreground rounded-tl-md',
+          message.sender === 'ai' && 'bg-card border border-border text-foreground rounded-tr-md',
+          message.sender === 'you' && 'bg-foreground text-background rounded-tr-md',
+          message.pending && 'opacity-60'
+        )}
+      >
+        {message.sender === 'ai' ? (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {message.content}
+          </ReactMarkdown>
+        ) : (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        )}
+      </div>
+      <p className="mt-0.5 flex items-center gap-1 px-1 text-[10px] text-muted-foreground tabular-nums">
+        {message.pending ? (
+          <>
+            <Loader2 size={10} className="animate-spin" /> Sending…
+          </>
+        ) : (
+          formatTime(message.created_at)
+        )}
+      </p>
+    </motion.div>
+  );
+}
+
+// Reply box: grows with content, Enter sends, "/" opens saved replies
+function Composer({
+  value,
+  onChange,
+  onSend,
+  archived,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+  archived: boolean;
+}) {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [snippetsOpen, setSnippetsOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+
+  const slashQuery = value.startsWith('/') ? value.slice(1).toLowerCase() : null;
+  const menuOpen = snippetsOpen || slashQuery !== null;
+  const snippets = QUICK_REPLIES.filter((r) => !slashQuery || r.toLowerCase().includes(slashQuery));
+
+  // Resize to fit content (up to ~6 lines)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [value]);
+
+  const choose = (snippet: string) => {
+    onChange(snippet);
+    setSnippetsOpen(false);
+    setHighlight(0);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (menuOpen && snippets.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight((h) => (h + 1) % snippets.length); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight((h) => (h - 1 + snippets.length) % snippets.length); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); choose(snippets[Math.min(highlight, snippets.length - 1)]); return; }
+    }
+    if (e.key === 'Escape' && menuOpen) {
+      setSnippetsOpen(false);
+      if (slashQuery !== null) onChange('');
+      return;
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (value.trim()) onSend();
+    }
+  };
+
+  return (
+    <div className="relative flex-shrink-0 border-t border-border bg-card px-4 py-3 md:px-6">
+      <div className="mx-auto max-w-3xl">
+        {menuOpen && (
+          <div role="listbox" aria-label="Saved replies" className="absolute bottom-full left-4 right-4 md:left-6 md:right-6 mb-2 mx-auto max-w-3xl overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+            <p className="border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">Saved replies</p>
+            {snippets.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-muted-foreground">No saved reply matches “{slashQuery}”.</p>
+            ) : (
+              snippets.map((snippet, i) => (
+                <button
+                  key={snippet}
+                  role="option"
+                  aria-selected={i === highlight}
+                  onMouseEnter={() => setHighlight(i)}
+                  onMouseDown={(e) => { e.preventDefault(); choose(snippet); }}
+                  className={cn('block w-full truncate px-3 py-2 text-left text-sm', i === highlight ? 'bg-muted text-foreground' : 'text-muted-foreground')}
+                >
+                  {snippet}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+
+        <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-2 py-1.5 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10 transition">
+          <button
+            type="button"
+            onClick={() => { setSnippetsOpen((o) => !o); inputRef.current?.focus(); }}
+            aria-label="Saved replies"
+            aria-expanded={menuOpen}
+            title="Saved replies"
+            className={cn('mb-0.5 p-1.5 rounded-lg transition-colors', menuOpen ? 'text-brand bg-brand/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
+          >
+            <Zap size={15} />
+          </button>
+          <label htmlFor="admin-reply" className="sr-only">Reply</label>
+          <textarea
+            id="admin-reply"
+            ref={inputRef}
+            rows={1}
+            value={value}
+            onChange={(e) => { onChange(e.target.value); setHighlight(0); }}
+            onKeyDown={handleKeyDown}
+            placeholder={archived ? 'Reply (this will stay archived)…' : 'Write a reply…'}
+            className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+          <button
+            onClick={onSend}
+            disabled={!value.trim()}
+            aria-label="Send reply"
+            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-background hover:bg-brand hover:text-white disabled:bg-muted disabled:text-muted-foreground transition-colors active:scale-95"
+          >
+            <ArrowUp size={15} />
+          </button>
+        </div>
+        <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
+          <kbd className="font-mono">Enter</kbd> to send · <kbd className="font-mono">Shift+Enter</kbd> new line · <kbd className="font-mono">/</kbd> saved replies
+        </p>
+      </div>
     </div>
   );
 }

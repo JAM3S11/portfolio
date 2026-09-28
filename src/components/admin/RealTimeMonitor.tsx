@@ -1,229 +1,210 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Activity, AlertTriangle, MessageCircle, Zap, ChevronLeft, Gauge,
+  MessageCircle, Sparkles, Timer, Bell, ChevronLeft, AlertTriangle, AlertOctagon, CheckCircle2, Zap,
 } from 'lucide-react';
 import { subscribeToNewInteractions, type AIInteraction } from '@/lib/analytics-service';
 import { evaluateInteraction } from '@/lib/alert-service';
-import { formatRelativeTime } from '@/pages/admin/constants';
+import { INTENT_LABELS, formatRelativeTime, formatMs, latencyStatus } from '@/pages/admin/constants';
 import MetricCard from './MetricCard';
+import PerformanceChart from './PerformanceChart';
 
 interface RealTimeMonitorProps {
-  isDarkMode: boolean;
   onBack?: () => void;
   initialConversationCount?: number;
+  /** Hide the title bar when the admin shell provides a page header */
+  embedded?: boolean;
 }
 
 interface LiveEvent {
   id: string;
-  type: 'conversation' | 'interaction' | 'alert';
+  type: 'interaction' | 'alert';
   message: string;
   detail: string;
   severity?: 'low' | 'medium' | 'high' | 'critical';
+  latencyMs?: number;
   timestamp: string;
 }
 
-export default function RealTimeMonitor({ isDarkMode, onBack, initialConversationCount = 0 }: RealTimeMonitorProps) {
-  const dk = isDarkMode;
-  const surface = dk ? 'bg-gray-900' : 'bg-white';
-  const border = dk ? 'border-gray-800' : 'border-gray-200';
-  const textPrimary = dk ? 'text-white' : 'text-gray-900';
-  const textMuted = dk ? 'text-gray-400' : 'text-gray-500';
+const SEVERITY: Record<string, { label: string; color: string; icon: typeof Bell }> = {
+  low: { label: 'Low', color: 'var(--muted-foreground)', icon: Bell },
+  medium: { label: 'Medium', color: 'var(--status-warning)', icon: AlertTriangle },
+  high: { label: 'High', color: 'var(--status-serious)', icon: AlertTriangle },
+  critical: { label: 'Critical', color: 'var(--status-critical)', icon: AlertOctagon },
+};
 
+const STATUS_ICON = { good: CheckCircle2, warning: AlertTriangle, critical: AlertOctagon } as const;
+const STATUS_COLOR = { good: 'var(--status-good)', warning: 'var(--status-warning)', critical: 'var(--status-critical)' } as const;
+
+const MAX_POINTS = 30;
+
+export default function RealTimeMonitor({ onBack, initialConversationCount = 0, embedded = false }: RealTimeMonitorProps) {
   const [events, setEvents] = useState<LiveEvent[]>([]);
-  const [currentLatency, setCurrentLatency] = useState(0);
+  const [latencies, setLatencies] = useState<{ time: string; latency: number }[]>([]);
+  const [answers, setAnswers] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
-  const [activeConvos, setActiveConvos] = useState(initialConversationCount);
-  const [errorCount, setErrorCount] = useState(0);
-  const eventsEndRef = useRef<HTMLDivElement>(null);
+  const [alertCount, setAlertCount] = useState(0);
+  const [startedAt] = useState(() => new Date());
 
   useEffect(() => {
-    eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [events]);
+    const addEvent = (event: Omit<LiveEvent, 'id'> & { id?: string }) => {
+      const ev: LiveEvent = { ...event, id: event.id ?? (crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`) };
+      setEvents((prev) => [ev, ...prev].slice(0, 50));
+    };
 
-  useEffect(() => {
-    const unsubInteractions = subscribeToNewInteractions((interaction: AIInteraction) => {
-      setCurrentLatency(interaction.latency_ms);
-      setTotalTokens((p) => p + (interaction.total_tokens || 0));
+    return subscribeToNewInteractions((interaction: AIInteraction) => {
+      const time = new Date(interaction.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLatencies((prev) => [...prev, { time, latency: interaction.latency_ms }].slice(-MAX_POINTS));
+      setAnswers((n) => n + 1);
+      setTotalTokens((n) => n + (interaction.total_tokens || 0));
 
       addEvent({
         type: 'interaction',
-        message: `AI response: ${interaction.latency_ms}ms`,
-        detail: `${interaction.total_tokens || 0} tokens used`,
-        timestamp: new Date().toISOString(),
+        message: interaction.intent_detected ? INTENT_LABELS[interaction.intent_detected] || interaction.intent_detected : 'AI answer',
+        detail: `${interaction.model} · ${(interaction.total_tokens || 0).toLocaleString()} tokens`,
+        latencyMs: interaction.latency_ms,
+        timestamp: interaction.created_at || new Date().toISOString(),
       });
 
       const alert = evaluateInteraction(interaction);
       if (alert) {
-        setErrorCount((p) => p + 1);
+        setAlertCount((n) => n + 1);
         addEvent({
           id: alert.id,
           type: 'alert',
           message: alert.message,
-          detail: `Severity: ${alert.severity}`,
+          detail: 'Alert raised',
           severity: alert.severity,
           timestamp: alert.created_at,
         });
       }
     });
-
-    return () => {
-      unsubInteractions();
-    };
   }, []);
 
-  function addEvent(event: Omit<LiveEvent, 'id'>) {
-    const ev: LiveEvent = {
-      ...event,
-      id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-    };
-    setEvents((prev) => [ev, ...prev].slice(0, 50));
-  }
-
-  const latencyColor =
-    currentLatency === 0
-      ? 'text-gray-400'
-      : currentLatency < 2000
-        ? 'text-emerald-500'
-        : currentLatency < 4000
-          ? 'text-amber-500'
-          : 'text-red-500';
-
-  const severityColors: Record<string, string> = {
-    low: 'border-l-emerald-500',
-    medium: 'border-l-amber-500',
-    high: 'border-l-orange-500',
-    critical: 'border-l-red-500',
-  };
-
-  const typeIcons: Record<string, React.ReactNode> = {
-    conversation: <MessageCircle size={14} className="text-blue-500" />,
-    interaction: <Zap size={14} className="text-violet-500" />,
-    alert: <AlertTriangle size={14} className="text-red-500" />,
-  };
+  const latest = latencies[latencies.length - 1]?.latency;
+  const avg = latencies.length ? Math.round(latencies.reduce((s, p) => s + p.latency, 0) / latencies.length) : 0;
 
   return (
-    <div className="flex flex-col h-full">
-      <div
-        className={`px-4 pt-4 pb-3 ${surface} border-b ${border} flex-shrink-0 flex items-center gap-2`}
-      >
-        {onBack && (
-          <button
-            onClick={onBack}
-            className={`md:hidden p-1.5 rounded-lg ${dk ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft size={18} className={textMuted} />
-          </button>
-        )}
-        <Activity size={16} className="text-emerald-500" />
-        <h2 className={`text-base font-semibold ${textPrimary}`}>Live Monitor</h2>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Metrics row */}
-        <div className="grid grid-cols-2 gap-3">
-          <MetricCard
-            label="Active Conversations"
-            value={activeConvos}
-            icon={MessageCircle}
-            color="blue"
-            isDarkMode={dk}
-          />
-          <MetricCard
-            label="Total Tokens"
-            value={totalTokens.toLocaleString()}
-            icon={Zap}
-            color="violet"
-            isDarkMode={dk}
-          />
+    <div className="flex h-full flex-col">
+      {!embedded && (
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-card px-4 pt-4 pb-3">
+          {onBack && (
+            <button onClick={onBack} aria-label="Back" className="md:hidden rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          <h2 className="text-base font-semibold text-foreground">Live monitor</h2>
         </div>
+      )}
 
-        {/* Latency gauge */}
-        <div className={`${surface} rounded-2xl p-4 border ${border}`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Gauge size={14} className={textMuted} />
-              <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
-                Current Latency
-              </p>
-            </div>
-            <span className={`text-lg font-bold ${latencyColor}`}>
-              {currentLatency > 0 ? `${currentLatency}ms` : '--'}
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-5 p-4 md:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              </span>
+              Listening since {startedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+            <span>Figures below cover this session only</span>
           </div>
-          <div className="h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-            <motion.div
-              className={`h-full rounded-full transition-colors ${
-                currentLatency < 2000
-                  ? 'bg-emerald-500'
-                  : currentLatency < 4000
-                    ? 'bg-amber-500'
-                    : 'bg-red-500'
-              }`}
-              initial={{ width: '0%' }}
-              animate={{
-                width: `${Math.min((currentLatency / 5000) * 100, 100)}%`,
-              }}
-              transition={{ duration: 0.3 }}
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MetricCard label="Conversations" value={initialConversationCount} icon={MessageCircle} sub="In the inbox" />
+            <MetricCard label="AI answers" value={answers} icon={Sparkles} sub={`${totalTokens.toLocaleString()} tokens`} delay={0.04} />
+            <MetricCard
+              label="Latest response"
+              value={latest !== undefined ? formatMs(latest) : '—'}
+              icon={Timer}
+              status={latest !== undefined ? latencyStatus(latest) : undefined}
+              sub={latencies.length ? `avg ${formatMs(avg)}` : 'Waiting for an answer'}
+              delay={0.08}
+            />
+            <MetricCard
+              label="Alerts raised"
+              value={alertCount}
+              icon={Bell}
+              status={alertCount > 0 ? { level: 'warning', label: 'Check Alerts' } : { level: 'good', label: 'All clear' }}
+              delay={0.12}
             />
           </div>
-          <div className="flex justify-between mt-1">
-            <span className={`text-[10px] ${textMuted}`}>0ms</span>
-            <span className={`text-[10px] ${textMuted}`}>2.5s</span>
-            <span className={`text-[10px] ${textMuted}`}>5s+</span>
-          </div>
-        </div>
 
-        {/* Live event feed */}
-        <div className={`${surface} rounded-2xl p-4 border ${border}`}>
-          <div className="flex items-center justify-between mb-3">
-            <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
-              Live Feed
-            </p>
-            {errorCount > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-500">
-                {errorCount} alerts
-              </span>
-            )}
-          </div>
-          <div className="space-y-1 max-h-64 overflow-y-auto">
+          <PerformanceChart
+            title="Response time"
+            description={`Last ${MAX_POINTS} AI answers, live`}
+            type="line"
+            xKey="time"
+            data={latencies}
+            series={[{ key: 'latency', name: 'Response time', color: 'var(--viz-1)' }]}
+            format={formatMs}
+            height={200}
+            emptyMessage="The chart fills in as visitors chat with the assistant."
+          />
+
+          <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3 md:px-5">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Activity</h3>
+                <p className="text-xs text-muted-foreground">AI answers and alerts as they happen, newest first</p>
+              </div>
+              <span className="text-xs tabular-nums text-muted-foreground">{events.length} events</span>
+            </div>
             {events.length === 0 ? (
-              <p className={`text-xs py-8 text-center ${textMuted}`}>
-                Waiting for activity...
-              </p>
+              <div className="px-5 py-12 text-center">
+                <Zap size={24} className="mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-foreground">Waiting for activity</p>
+                <p className="mt-1 text-xs text-muted-foreground">Keep this page open; events appear here in real time.</p>
+              </div>
             ) : (
-              <AnimatePresence>
-                {events.map((ev) => (
-                  <motion.div
-                    key={ev.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex items-start gap-2.5 py-2 px-2.5 rounded-lg border-l-2 ${
-                      ev.type === 'alert'
-                        ? severityColors[ev.severity || 'low']
-                        : 'border-l-transparent'
-                    } ${dk ? 'hover:bg-gray-800/60' : 'hover:bg-gray-50'}`}
-                  >
-                    <div className="mt-0.5 flex-shrink-0">
-                      {typeIcons[ev.type]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium truncate ${textPrimary}`}>
-                        {ev.message}
-                      </p>
-                      <p className={`text-[10px] ${textMuted}`}>{ev.detail}</p>
-                    </div>
-                    <span className={`text-[10px] flex-shrink-0 ${textMuted}`}>
-                      {formatRelativeTime(ev.timestamp)}
-                    </span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full min-w-[560px] text-left text-xs">
+                  <thead className="sticky top-0 bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2 font-medium md:px-5">When</th>
+                      <th className="px-4 py-2 font-medium">Event</th>
+                      <th className="px-4 py-2 font-medium">Detail</th>
+                      <th className="px-4 py-2 font-medium md:px-5">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    <AnimatePresence initial={false}>
+                      {events.map((ev) => {
+                        const sev = ev.severity ? SEVERITY[ev.severity] : null;
+                        const lat = ev.latencyMs !== undefined ? latencyStatus(ev.latencyMs) : null;
+                        const StatusIcon = sev ? sev.icon : lat ? STATUS_ICON[lat.level] : null;
+                        return (
+                          <motion.tr
+                            key={ev.id}
+                            initial={{ opacity: 0, backgroundColor: 'var(--muted)' }}
+                            animate={{ opacity: 1, backgroundColor: 'rgba(0,0,0,0)' }}
+                            transition={{ duration: 0.8 }}
+                          >
+                            <td className="whitespace-nowrap px-4 py-2 text-muted-foreground md:px-5">{formatRelativeTime(ev.timestamp)}</td>
+                            <td className="px-4 py-2 font-medium text-foreground">
+                              <span className="flex items-center gap-1.5">
+                                {ev.type === 'alert' ? <Bell size={12} className="text-muted-foreground" /> : <Sparkles size={12} className="text-muted-foreground" />}
+                                {ev.message}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground">{ev.detail}</td>
+                            <td className="whitespace-nowrap px-4 py-2 md:px-5">
+                              {StatusIcon && (
+                                <span className="flex items-center gap-1.5 text-foreground">
+                                  <StatusIcon size={12} style={{ color: sev ? sev.color : STATUS_COLOR[lat!.level] }} aria-hidden="true" />
+                                  {sev ? sev.label : `${formatMs(ev.latencyMs!)} · ${lat!.label}`}
+                                </span>
+                              )}
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
             )}
-            <div ref={eventsEndRef} />
-          </div>
+          </section>
         </div>
       </div>
     </div>

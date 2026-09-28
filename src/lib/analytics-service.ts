@@ -198,6 +198,29 @@ export async function getAggregatedMetrics(
   };
 }
 
+// Thumbs up/down given on AI answers in one conversation (widget stores 👍 as 5, 👎 as 1)
+export async function getConversationFeedback(
+  conversationId: string
+): Promise<{ up: number; down: number }> {
+  if (!supabase) return { up: 0, down: 0 };
+
+  const { data, error } = await supabase
+    .from('user_feedback')
+    .select('rating')
+    .eq('conversation_id', conversationId);
+
+  if (error) {
+    console.error('Error fetching conversation feedback:', error);
+    return { up: 0, down: 0 };
+  }
+
+  const ratings = (data ?? []) as { rating: number }[];
+  return {
+    up: ratings.filter((r) => r.rating >= 4).length,
+    down: ratings.filter((r) => r.rating <= 2).length,
+  };
+}
+
 // Get interactions for a specific conversation
 export async function getConversationInteractions(
   conversationId: string

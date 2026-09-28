@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Code2, Layers, Target, Rocket, Sparkles } from 'lucide-react';
 import {
@@ -83,7 +83,7 @@ const stackGroups = [
 const Marquee = ({ items, duration = 40, reverse = false }) => (
   <div
     style={{ '--duration': `${duration}s` }}
-    className="group flex overflow-hidden [--gap:3rem] gap-(--gap) [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+    className="group flex overflow-hidden [--gap:2rem] sm:[--gap:3rem] gap-(--gap) [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] sm:[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
   >
     {[0, 1].map((copy) => (
       <ul
@@ -98,13 +98,17 @@ const Marquee = ({ items, duration = 40, reverse = false }) => (
           <li
             key={name}
             style={color ? { '--brand-color': color } : undefined}
-            className="group/logo flex items-center gap-2.5 text-muted-foreground opacity-70 hover:opacity-100 hover:text-foreground transition"
+            className="group/logo flex items-center gap-2 sm:gap-2.5 text-muted-foreground opacity-80 sm:opacity-70 hover:opacity-100 hover:text-foreground transition"
           >
+            {/* Icons size from font-size (1em), so they scale with the breakpoint */}
             <Icon
-              size={26}
-              className={color ? 'transition-colors group-hover/logo:text-(--brand-color)' : undefined}
+              size="1em"
+              className={cn(
+                'shrink-0 text-xl sm:text-[26px]',
+                color && 'transition-colors group-hover/logo:text-(--brand-color)'
+              )}
             />
-            <span className="text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">{name}</span>
+            <span className="text-sm sm:text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">{name}</span>
           </li>
         ))}
       </ul>
@@ -122,20 +126,31 @@ const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
 const inView = { initial: 'hidden', whileInView: 'visible', viewport: { once: true, margin: '-80px' } };
 
 const AboutPage = () => {
+  const [activeCard, setActiveCard] = useState(0);
+
+  // Track which principle card is snapped into view on the mobile carousel
+  const handleCarouselScroll = (e) => {
+    const el = e.currentTarget;
+    const card = el.firstElementChild;
+    if (!card) return;
+    const step = card.getBoundingClientRect().width + 12; // card width + gap-3
+    setActiveCard(Math.min(principles.length - 1, Math.round(el.scrollLeft / step)));
+  };
+
   return (
-    <section id="about" className="bg-background text-foreground px-6 py-24 md:py-32">
+    <section id="about" className="bg-background text-foreground px-5 sm:px-6 py-16 sm:py-24 md:py-32">
       <div className="max-w-5xl mx-auto">
 
         {/* Heading + bio */}
-        <motion.div {...inView} variants={stagger} className="grid md:grid-cols-[1fr_1.3fr] gap-8 md:gap-16 mb-20">
+        <motion.div {...inView} variants={stagger} className="grid md:grid-cols-[1fr_1.3fr] gap-5 sm:gap-8 md:gap-16 mb-14 sm:mb-20">
           <motion.div variants={fadeUp}>
-            <p className="font-mono text-xs uppercase tracking-wider text-brand mb-4">01 — About</p>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">
+            <p className="font-mono text-xs uppercase tracking-wider text-brand mb-3 sm:mb-4">01 — About</p>
+            <h2 className="text-[1.75rem] sm:text-3xl md:text-4xl font-semibold tracking-tight leading-tight text-balance">
               Engineering with the product in mind.
             </h2>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="space-y-5 text-base md:text-lg leading-relaxed text-muted-foreground">
+          <motion.div variants={fadeUp} className="space-y-4 sm:space-y-5 text-[15px] sm:text-base md:text-lg leading-relaxed text-muted-foreground">
             <p>
               I'm a <span className="text-foreground font-medium">Full-Stack Engineer</span> who
               enjoys the whole journey of a product: shaping the data model, designing the API and
@@ -152,41 +167,66 @@ const AboutPage = () => {
         </motion.div>
 
         {/* Principles */}
-        <motion.div {...inView} variants={stagger} className="mb-20">
-          <motion.p variants={fadeUp} className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-6">
-            How I work
-          </motion.p>
-          <div className="grid sm:grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
+        <motion.div {...inView} variants={stagger} className="mb-14 sm:mb-20">
+          <motion.div variants={fadeUp} className="flex items-center justify-between mb-4 sm:mb-6">
+            <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">How I work</p>
+            <p className="sm:hidden font-mono text-[11px] text-muted-foreground">
+              {String(activeCard + 1).padStart(2, '0')} / {String(principles.length).padStart(2, '0')}
+            </p>
+          </motion.div>
+
+          {/* Swipeable carousel on phones, hairline 2×2 grid from sm up */}
+          <div
+            onScroll={handleCarouselScroll}
+            className={cn(
+              'flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-px-5 -mx-5 px-5 pb-1',
+              '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+              'sm:grid sm:grid-cols-2 sm:gap-px sm:overflow-hidden sm:mx-0 sm:px-0 sm:pb-0 sm:rounded-xl sm:border sm:border-border sm:bg-border'
+            )}
+          >
             {principles.map(({ icon: Icon, title, desc }) => (
               <motion.div
                 key={title}
                 variants={fadeUp}
-                className="group bg-background p-6 md:p-8 hover:bg-muted/40 transition-colors"
+                className="group w-[82%] shrink-0 snap-start rounded-2xl border border-border bg-card/40 p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-background sm:p-6 md:p-8 hover:bg-muted/40 transition-colors"
               >
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground group-hover:text-brand group-hover:border-brand/40 transition-colors">
+                <div className="mb-4 sm:mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground group-hover:text-brand group-hover:border-brand/40 transition-colors">
                   <Icon size={18} />
                 </div>
-                <h3 className="text-base font-semibold text-foreground mb-2">{title}</h3>
+                <h3 className="text-base font-semibold text-foreground mb-1.5 sm:mb-2">{title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
               </motion.div>
+            ))}
+          </div>
+
+          {/* Position dots (mobile only) */}
+          <div className="sm:hidden mt-4 flex justify-center gap-1.5" aria-hidden="true">
+            {principles.map((p, i) => (
+              <span
+                key={p.title}
+                className={cn(
+                  'h-1.5 rounded-full transition-all duration-300',
+                  i === activeCard ? 'w-5 bg-brand' : 'w-1.5 bg-border'
+                )}
+              />
             ))}
           </div>
         </motion.div>
 
         {/* Stack */}
         <motion.div {...inView} variants={stagger}>
-          <motion.p variants={fadeUp} className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-6">
+          <motion.p variants={fadeUp} className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-4 sm:mb-6">
             Tools &amp; technologies
           </motion.p>
           <motion.div
             variants={fadeUp}
-            className="rounded-xl border border-border bg-card/30 py-8 md:py-10 space-y-6 md:space-y-8"
+            className="-mx-5 sm:mx-0 border-y sm:border border-border sm:rounded-xl bg-card/30 py-6 sm:py-8 md:py-10 space-y-5 sm:space-y-6 md:space-y-8"
           >
             <Marquee items={[...stackGroups[0].items, ...stackGroups[1].items]} duration={45} />
             <Marquee items={[...stackGroups[2].items, ...stackGroups[3].items]} duration={50} reverse />
 
             {/* Category legend */}
-            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 px-6 pt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <ul className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 px-5 sm:px-6 pt-1 sm:pt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
               {stackGroups.map(({ label, items }) => (
                 <li key={label}>
                   {label} <span className="text-foreground">{items.length}</span>

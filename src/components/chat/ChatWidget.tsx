@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useViewport, useBodyScrollLock } from '@/hooks';
 import ChatMessage from './ChatMessage';
+import VoiceInput from './VoiceInput';
 import { useChat, type DeepFocus } from './useChat';
 
 interface ChatWidgetProps {
@@ -401,6 +402,11 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                   enterKeyHint="send"
                   // 16px on phones prevents iOS Safari zooming the page on focus
                   className="max-h-[140px] flex-1 resize-none bg-transparent py-1.5 sm:py-1 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+                />
+                <VoiceInput
+                  value={input}
+                  onChange={setInput}
+                  disabled={isLoading}
                 />
                 <button
                   type="button"

@@ -1,0 +1,146 @@
+import { Mic, MicOff } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface VoiceInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  buttonClassName?: string;
+  disabled?: boolean;
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  'not-allowed': 'Microphone blocked. Allow access in your browser.',
+  'service-not-allowed': 'Microphone blocked. Allow access in your browser.',
+  'audio-capture': 'No microphone found.',
+  network: 'Voice input needs a network connection.',
+};
+
+export default function VoiceInput({
+  value,
+  onChange,
+  className,
+  buttonClassName,
+  disabled = false,
+}: VoiceInputProps) {
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const valueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+
+  // Keep latest props available without recreating the recognizer
+  useEffect(() => {
+    valueRef.current = value;
+    onChangeRef.current = onChange;
+  }, [value, onChange]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const SpeechRecognitionConstructor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionConstructor) return;
+
+    setVoiceSupported(true);
+    const recognition = new SpeechRecognitionConstructor();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          transcript += result[0].transcript;
+        }
+      }
+
+      if (!transcript.trim()) return;
+
+      onChangeRef.current(`${valueRef.current} ${transcript.trim()}`.trim());
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      if (event?.error && event.error !== 'no-speech' && event.error !== 'aborted') {
+        setError(ERROR_MESSAGES[event.error] ?? 'Voice input failed. Try again.');
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      recognition.abort();
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(null), 4000);
+    return () => clearTimeout(timer);
+  }, [error]);
+
+  const toggleVoiceInput = () => {
+    if (!voiceSupported || !recognitionRef.current || disabled) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    setError(null);
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch {
+      setIsListening(false);
+    }
+  };
+
+  if (!voiceSupported) return null;
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={toggleVoiceInput}
+        aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+        className={cn(
+          'flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full transition active:scale-95',
+          isListening
+            ? 'bg-red-500 text-white shadow-[0_0_0_4px_rgba(239,68,68,0.15)]'
+            : 'bg-muted text-foreground hover:bg-brand/10 hover:text-brand',
+          className,
+          buttonClassName,
+          disabled && 'cursor-not-allowed opacity-50'
+        )}
+        disabled={disabled}
+      >
+        {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+      </button>
+      {error && (
+        <span
+          role="alert"
+          className="absolute bottom-full right-0 mb-2 w-max max-w-[220px] rounded-md bg-foreground px-2 py-1 text-xs text-background shadow"
+        >
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}

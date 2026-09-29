@@ -9,6 +9,7 @@ import { useViewport, useBodyScrollLock } from '@/hooks';
 import ChatMessage from './ChatMessage';
 import VoiceInput from './VoiceInput';
 import { useChat, type DeepFocus } from './useChat';
+import type { ResponseStyle } from '@/lib/gemini-service';
 
 interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
@@ -29,6 +30,12 @@ const DEEP_DIVE_OPTIONS: { focus: DeepFocus; label: string; desc: string; icon: 
 ];
 
 const FOLLOW_UPS = ['Tell me about SOLEASE', "What's his experience?", 'How can I contact him?', 'What is he working on now?'];
+const RESPONSE_STYLE_OPTIONS: { value: ResponseStyle; label: string }[] = [
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'concise', label: 'Concise' },
+  { value: 'detailed', label: 'Detailed' },
+  { value: 'beginner', label: 'Beginner-friendly' },
+];
 
 const TEASER_KEY = 'jdg-chat-teaser-seen';
 const TEASER_DELAY_MS = 8000;
@@ -103,11 +110,12 @@ const TypingIndicator = () => (
 
 export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const chat = useChat();
-  const { messages, mode, deepFocus, isLoading, isSupabase } = chat;
+  const { messages, mode, deepFocus, responseStyle, isLoading, isSupabase } = chat;
 
   const [isOpen, setIsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const [showTeaser, setShowTeaser] = useState(false);
 
   const isDesktop = useViewport(640);
@@ -190,6 +198,13 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   };
+
+  // The textarea unmounts while the recognizer runs, so re-fit it once the transcript is back
+  useEffect(() => {
+    if (isListening) return;
+    const id = requestAnimationFrame(resizeInput);
+    return () => cancelAnimationFrame(id);
+  }, [input, isListening]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = (text: string, intent: string | null = null) => {
     if (!text.trim() || isLoading) return;
@@ -308,6 +323,24 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
                   ))}
                 </div>
               </div>
+              <div className="flex items-center justify-between gap-3 px-4 pb-3">
+                <label htmlFor="chat-response-style" className="text-xs text-muted-foreground">
+                  Answer style
+                </label>
+                <select
+                  id="chat-response-style"
+                  value={responseStyle}
+                  onChange={(event) => {
+                    const selected = RESPONSE_STYLE_OPTIONS.find((option) => option.value === event.currentTarget.value);
+                    if (selected) chat.setResponseStyle(selected.value);
+                  }}
+                  className="max-w-[65%] rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
+                >
+                  {RESPONSE_STYLE_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Conversation */}
@@ -389,29 +422,32 @@ export default function ChatWidget({ position = 'bottom-right' }: ChatWidgetProp
             {/* Bottom padding clears the iPhone home indicator */}
             <div className="shrink-0 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
               <div className="flex items-end gap-2 rounded-2xl sm:rounded-xl border border-border bg-background pl-3.5 pr-1.5 sm:px-3 py-1.5 sm:py-2 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10 transition">
-                <label htmlFor="chat-input" className="sr-only">Message</label>
-                <textarea
-                  id="chat-input"
-                  ref={inputRef}
-                  rows={1}
-                  value={input}
-                  maxLength={MAX_INPUT}
-                  onChange={(e) => { setInput(e.target.value); resizeInput(); }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={mode === 'deep' && activeFocus ? `Ask about ${activeFocus.label.toLowerCase()} internals…` : 'Ask anything…'}
-                  enterKeyHint="send"
-                  // 16px on phones prevents iOS Safari zooming the page on focus
-                  className="max-h-[140px] flex-1 resize-none bg-transparent py-1.5 sm:py-1 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
-                />
+                {/* While the recognizer runs, VoiceInput swaps the textarea for the listening UI */}
                 <VoiceInput
                   value={input}
                   onChange={setInput}
+                  onListeningChange={setIsListening}
                   disabled={isLoading}
-                />
+                >
+                  <label htmlFor="chat-input" className="sr-only">Message</label>
+                  <textarea
+                    id="chat-input"
+                    ref={inputRef}
+                    rows={1}
+                    value={input}
+                    maxLength={MAX_INPUT}
+                    onChange={(e) => { setInput(e.target.value); resizeInput(); }}
+                    onKeyDown={handleKeyDown}
+                    placeholder={mode === 'deep' && activeFocus ? `Ask about ${activeFocus.label.toLowerCase()} internals…` : 'Ask anything…'}
+                    enterKeyHint="send"
+                    // 16px on phones prevents iOS Safari zooming the page on focus
+                    className="max-h-[140px] flex-1 resize-none bg-transparent py-1.5 sm:py-1 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+                  />
+                </VoiceInput>
                 <button
                   type="button"
                   onClick={() => submit(input)}
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || isListening}
                   aria-label="Send message"
                   className="flex h-10 w-10 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-brand hover:text-white active:scale-95 disabled:bg-muted disabled:text-muted-foreground"
                 >

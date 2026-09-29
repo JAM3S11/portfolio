@@ -3,7 +3,7 @@ import { createConversation, addMessage, isSupabaseConfigured, subscribeToMessag
 import { generateResponseWithMetrics, generateDeepDiveResponseWithMetrics } from '@/lib/faq-knowledge';
 import { logAIInteraction, logAIError, logUserFeedback } from '@/lib/analytics-service';
 import { evaluateInteraction } from '@/lib/alert-service';
-import type { MetricResult } from '@/lib/gemini-service';
+import type { ConversationTurn, MetricResult, ResponseStyle } from '@/lib/gemini-service';
 
 export type ChatMode = 'chat' | 'deep';
 export type DeepFocus = 'frontend' | 'backend' | 'fullstack' | 'software';
@@ -29,6 +29,7 @@ interface StoredChat {
   mode: ChatMode;
   deepFocus: DeepFocus | null;
   conversationId: string | null;
+  responseStyle?: ResponseStyle;
 }
 
 const STORAGE_KEY = 'jdg-chat';
@@ -136,6 +137,7 @@ export function useChat() {
   );
   const [mode, setMode] = useState<ChatMode>(stored?.mode ?? 'chat');
   const [deepFocus, setDeepFocus] = useState<DeepFocus | null>(stored?.deepFocus ?? null);
+  const [responseStyle, setResponseStyle] = useState<ResponseStyle>(stored?.responseStyle ?? 'balanced');
   const [isLoading, setIsLoading] = useState(false);
   const [isSupabase] = useState(isSupabaseConfigured);
 
@@ -170,12 +172,12 @@ export function useChat() {
   // Keep the conversation across reloads within the tab
   useEffect(() => {
     try {
-      const data: StoredChat = { messages, mode, deepFocus, conversationId: conversationIdRef.current };
+      const data: StoredChat = { messages, mode, deepFocus, conversationId: conversationIdRef.current, responseStyle };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Storage unavailable (private mode); chat still works in memory
     }
-  }, [messages, mode, deepFocus]);
+  }, [messages, mode, deepFocus, responseStyle]);
 
   const persistMessage = useCallback(
     async (role: 'visitor' | 'bot', content: string): Promise<{ convId: string; msgId: string } | null> => {
@@ -207,6 +209,7 @@ export function useChat() {
       if (intent) intentRef.current = intent;
       setMessages((prev) => [...prev, { id: newId(), role: 'visitor', content: prompt }]);
       setIsLoading(true);
+      const history: ConversationTurn[] = messages.slice(-8).map(({ role, content }) => ({ role, content }));
 
       // Save the visitor message while the answer is generated
       const visitorSaved = persistMessage('visitor', prompt);
@@ -214,8 +217,8 @@ export function useChat() {
       let result: MetricResult;
       try {
         result = deepFocus && mode === 'deep'
-          ? await generateDeepDiveResponseWithMetrics(prompt, deepFocus)
-          : await generateResponseWithMetrics(prompt);
+          ? await generateDeepDiveResponseWithMetrics(prompt, deepFocus, history, responseStyle)
+          : await generateResponseWithMetrics(prompt, undefined, history, responseStyle);
       } catch {
         setMessages((prev) => [
           ...prev,
@@ -250,7 +253,7 @@ export function useChat() {
         trackInteraction(visitorPersist.convId, botPersist.msgId, prompt, result, intent);
       }
     },
-    [deepFocus, isLoading, mode, persistMessage]
+    [deepFocus, isLoading, messages, mode, persistMessage, responseStyle]
   );
 
   const startDeepDive = useCallback(
@@ -315,11 +318,13 @@ export function useChat() {
     messages,
     mode,
     deepFocus,
+    responseStyle,
     isLoading,
     isSupabase,
     send,
     startDeepDive,
     switchMode,
+    setResponseStyle,
     rate,
     finishAnimation,
     reset,

@@ -1,4 +1,4 @@
-import { generateGeminiResponse, improveFAQResponse, generateDeepDiveResponse as generateDeepDiveGemini, isGeminiConfigured, generateGeminiResponseWithMetrics, generateDeepDiveResponseWithMetrics as generateDeepDiveWithMetrics, type MetricResult } from "./gemini-service";
+import { generateGeminiResponse, improveFAQResponse, generateDeepDiveResponse as generateDeepDiveGemini, isGeminiConfigured, generateGeminiResponseWithMetrics, generateDeepDiveResponseWithMetrics as generateDeepDiveWithMetrics, type ConversationTurn, type MetricResult, type ResponseStyle } from "./gemini-service";
 import { PROJECTS } from "./project-knowledge";
 
 export interface FAQ {
@@ -834,7 +834,9 @@ export async function generateDeepDiveResponse(
 
 export async function generateResponseWithMetrics(
   userMessage: string,
-  context?: FAQContext
+  context?: FAQContext,
+  history: ConversationTurn[] = [],
+  style: ResponseStyle = "balanced"
 ): Promise<MetricResult> {
   const matchedFAQ = findBestMatch(userMessage);
 
@@ -842,7 +844,7 @@ export async function generateResponseWithMetrics(
     const faqResponse = matchedFAQ.getResponse(undefined, context);
 
     if (isGeminiConfigured()) {
-      const result = await improveFAQResponseWithMetrics(faqResponse, userMessage);
+      const result = await improveFAQResponseWithMetrics(faqResponse, userMessage, history, style);
       return result;
     }
 
@@ -859,7 +861,7 @@ export async function generateResponseWithMetrics(
 
   if (isGeminiConfigured()) {
     const faqContext = buildFAQContextString();
-    return await generateGeminiResponseWithMetrics(userMessage, faqContext);
+    return await generateGeminiResponseWithMetrics(userMessage, faqContext, history, style);
   }
 
   const fallbackFAQ = faqKnowledgeBase[faqKnowledgeBase.length - 1];
@@ -876,10 +878,12 @@ export async function generateResponseWithMetrics(
 
 async function improveFAQResponseWithMetrics(
   originalResponse: string,
-  userQuestion: string
+  userQuestion: string,
+  history: ConversationTurn[],
+  style: ResponseStyle
 ): Promise<MetricResult> {
   const start = performance.now();
-  const improved = await improveFAQResponse(originalResponse, userQuestion);
+  const improved = await improveFAQResponse(originalResponse, userQuestion, history, style);
   const latency_ms = Math.round(performance.now() - start);
 
   const isImproved = improved !== originalResponse;
@@ -896,7 +900,9 @@ async function improveFAQResponseWithMetrics(
 
 export async function generateDeepDiveResponseWithMetrics(
   userMessage: string,
-  focus: string
+  focus: string,
+  history: ConversationTurn[] = [],
+  style: ResponseStyle = "balanced"
 ): Promise<MetricResult> {
   const projectContext = buildDeepDiveProjectContext(focus);
 
@@ -914,7 +920,7 @@ export async function generateDeepDiveResponseWithMetrics(
   }
 
   try {
-    const result = await generateDeepDiveWithMetrics(userMessage, focus, projectContext);
+    const result = await generateDeepDiveWithMetrics(userMessage, focus, projectContext, history, style);
     if (result.text.includes("my Gemini API connection")) {
       const localResponse = buildLocalDeepDiveResponse(userMessage, focus, projectContext);
       return { ...result, text: localResponse, confidence: 0.7 };

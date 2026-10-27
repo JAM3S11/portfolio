@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useScroll, useViewport, useBodyScrollLock, useScrollProgress, useActiveSection } from '../hooks';
 import { Logo, DesktopNav, MobileNav, ThemeToggle } from './components';
+import { useResume } from '../content/ResumeProvider';
 
 const sectionIds = ['home', 'about', 'experience', 'projects', 'contact'];
 
@@ -25,6 +26,7 @@ const MenuIcon = ({ isOpen }) => (
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { openResume } = useResume();
   const scrolled = useScroll(20);
   const scrollProgress = useScrollProgress();
   const isDesktop = useViewport(768);
@@ -91,14 +93,14 @@ const Header = () => {
 
             <div className="hidden md:block mx-1.5 h-5 w-px bg-border" />
 
-            <a
-              href="/JAMES_DANIEL_CV.pdf"
-              download="James_Daniel_CV.pdf"
+            <button
+              type="button"
+              onClick={openResume}
               className="hidden lg:flex items-center gap-1.5 h-9 px-3.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <FileText size={15} />
               Resume
-            </a>
+            </button>
             {/* Primary CTA stays visible on phones too */}
             <a
               href="#contact"

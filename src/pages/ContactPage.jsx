@@ -53,7 +53,9 @@ const fadeUp = {
 
 // text-base (16px) on phones stops iOS Safari zooming the page when a field is focused
 const inputClass =
-  'w-full rounded-xl sm:rounded-lg border border-border bg-background px-3.5 py-3 sm:py-2.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm transition-colors focus:outline-none focus:border-brand/60 focus:ring-4 focus:ring-brand/10';
+  'w-full rounded-sm border border-border bg-transparent px-3.5 py-3 sm:py-2.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors hover:border-foreground/25 focus:outline-none focus:border-brand';
+
+const labelClass = 'mb-1.5 block text-sm font-medium text-foreground';
 
 // Current time in Nairobi, refreshed every 30s
 const useLocalTime = () => {
@@ -272,34 +274,38 @@ const ContactPage = () => {
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeUp}
-            className="relative order-1 lg:order-2"
+            className="order-1 lg:order-2"
           >
-            <div className="absolute -inset-3 sm:-inset-6 -z-10 rounded-[2rem] bg-linear-to-br from-cyan-500/10 via-brand/10 to-transparent blur-2xl" />
-
-            <form
-              onSubmit={handleForm}
-              className="rounded-2xl border border-border bg-card/70 backdrop-blur-sm p-5 sm:p-6 md:p-8 shadow-xl shadow-black/5 space-y-5"
-            >
+            <form onSubmit={handleForm} className="rounded-sm border border-border bg-background">
               {/* Honeypot for spam bots (Web3Forms) */}
               <input type="checkbox" name="botcheck" className="hidden" tabIndex={-1} autoComplete="off" />
 
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Send a message</h3>
-                <p className="text-sm text-muted-foreground">All fields are required.</p>
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-7 sm:py-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Send a message</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">All fields are required.</p>
+                </div>
+                <span className="hidden sm:flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <Clock size={12} />
+                  Reply within 24h
+                </span>
               </div>
 
+              {/* Body */}
+              <div className="space-y-6 px-5 py-6 sm:px-7 sm:py-7">
               {/* Topic */}
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-foreground">What's this about?</legend>
-                <div className="flex flex-wrap gap-2">
+                <legend className="mb-2.5 text-sm font-medium text-foreground">What's this about?</legend>
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   {topics.map((t) => (
                     <label
                       key={t}
                       className={cn(
-                        'cursor-pointer rounded-full border px-3.5 py-2 sm:py-1.5 text-[13px] sm:text-xs font-medium transition-colors active:scale-[0.97] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40',
+                        'cursor-pointer rounded-sm border px-3.5 py-2.5 sm:py-2 text-center text-[13px] sm:text-xs font-medium transition-colors has-[:focus-visible]:border-brand',
                         topic === t
-                          ? 'border-brand/60 bg-brand/10 text-foreground'
-                          : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/20'
+                          ? 'border-brand bg-brand/5 text-brand'
+                          : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/25'
                       )}
                     >
                       <input
@@ -316,61 +322,35 @@ const ContactPage = () => {
                 </div>
               </fieldset>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-5 sm:gap-4">
                 <div>
-                  <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-foreground">
-                    Name
-                  </label>
+                  <label htmlFor="contact-name" className={labelClass}>Full name</label>
                   <input id="contact-name" name="name" type="text" required autoComplete="name" enterKeyHint="next" placeholder="Jane Doe" className={inputClass} />
                 </div>
                 <div>
-                  <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-foreground">
-                    Email
-                  </label>
+                  <label htmlFor="contact-email" className={labelClass}>Email address</label>
                   <input id="contact-email" name="email" type="email" inputMode="email" required autoComplete="email" autoCapitalize="none" enterKeyHint="next" placeholder="jane@company.com" className={inputClass} />
                 </div>
               </div>
 
               <div>
-                <div className="mb-1.5 flex items-baseline justify-between">
-                  <label htmlFor="contact-message" className="text-sm font-medium text-foreground">
-                    Message
-                  </label>
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {messageLength}/{MESSAGE_LIMIT}
-                  </span>
-                </div>
+                <label htmlFor="contact-message" className={labelClass}>Message</label>
                 <textarea
                   id="contact-message"
                   name="message"
                   required
-                  rows={5}
+                  rows={6}
                   maxLength={MESSAGE_LIMIT}
                   onChange={(e) => setMessageLength(e.target.value.length)}
                   placeholder="A few lines about the role, project or idea, timelines and anything I should know."
                   className={cn(inputClass, 'resize-none')}
                 />
+                <p className="mt-1.5 text-right font-mono text-[11px] text-muted-foreground">
+                  {messageLength}/{MESSAGE_LIMIT}
+                </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className={cn(
-                  'group flex h-12 sm:h-auto w-full items-center justify-center gap-2 rounded-xl sm:rounded-lg sm:py-3 text-[15px] sm:text-sm font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70',
-                  status === 'success'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-foreground text-background hover:bg-brand hover:text-white'
-                )}
-              >
-                {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
-                {status === 'success' && <CheckCircle2 size={16} />}
-                {(status === 'idle' || status === 'error') && (
-                  <Send size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                )}
-                {status === 'loading' ? 'Sending…' : status === 'success' ? 'Message sent' : 'Send message'}
-              </button>
-
-              <div aria-live="polite" className="min-h-5">
+              <div aria-live="polite">
                 <AnimatePresence>
                   {feedback && (
                     <motion.p
@@ -378,8 +358,10 @@ const ContactPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       className={cn(
-                        'flex items-start gap-2 text-sm',
-                        status === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                        'flex items-start gap-2 rounded-sm border px-3.5 py-3 text-sm',
+                        status === 'error'
+                          ? 'border-red-500/40 text-red-600 dark:text-red-400'
+                          : 'border-green-500/40 text-green-600 dark:text-green-400'
                       )}
                     >
                       {status === 'error' ? <AlertCircle size={16} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={16} className="mt-0.5 shrink-0" />}
@@ -388,10 +370,31 @@ const ContactPage = () => {
                   )}
                 </AnimatePresence>
               </div>
+              </div>
 
-              <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-                Your details are only used to reply to you. No newsletters, no spam.
-              </p>
+              {/* Footer: privacy note + submit */}
+              <div className="flex flex-col-reverse gap-4 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-5">
+                <p className="text-center sm:text-left text-xs text-muted-foreground">
+                  Your details are only used to reply to you. No newsletters, no spam.
+                </p>
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className={cn(
+                    'group flex h-11 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-sm px-6 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-70',
+                    status === 'success'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-foreground text-background hover:bg-brand hover:text-white'
+                  )}
+                >
+                  {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
+                  {status === 'success' && <CheckCircle2 size={16} />}
+                  {(status === 'idle' || status === 'error') && (
+                    <Send size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  )}
+                  {status === 'loading' ? 'Sending…' : status === 'success' ? 'Message sent' : 'Send message'}
+                </button>
+              </div>
             </form>
           </motion.div>
         </div>

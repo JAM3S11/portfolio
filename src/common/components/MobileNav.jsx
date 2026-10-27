@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, Github, Linkedin, Mail, FileText } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLinks } from './DesktopNav';
 import { cn } from '../../lib/utils';
+import { useResume } from '../../content/ResumeProvider';
 
 export const mobileMenuVariants = {
   hidden: { opacity: 0, scale: 0.96, y: -8 },
@@ -35,6 +36,8 @@ const socials = [
 ];
 
 const MobileNav = ({ isOpen, onClose, active }) => {
+  const { openResume } = useResume();
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -91,19 +94,18 @@ const MobileNav = ({ isOpen, onClose, active }) => {
             <div className="mx-2 my-2 h-px bg-border" />
 
             {/* Resume */}
-            <motion.a
+            <motion.button
               variants={itemVariants}
-              href="/JAMES_DANIEL_CV.pdf"
-              download="James_Daniel_CV.pdf"
-              onClick={onClose}
-              className="flex min-h-[52px] items-center justify-between rounded-2xl px-4 text-base font-medium text-foreground active:bg-muted/60 transition-colors"
+              type="button"
+              onClick={() => { onClose(); openResume(); }}
+              className="flex w-full min-h-[52px] items-center justify-between rounded-2xl px-4 text-base font-medium text-foreground active:bg-muted/60 transition-colors"
             >
               <span className="flex items-center gap-3">
                 <FileText size={18} className="text-muted-foreground" />
-                Download resume
+                View resume
               </span>
               <span className="font-mono text-[11px] text-muted-foreground">PDF</span>
-            </motion.a>
+            </motion.button>
 
             {/* CTA + socials */}
             <motion.div variants={itemVariants} className="flex items-center gap-2 p-2 pt-3">

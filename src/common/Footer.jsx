@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowUp, ArrowUpRight, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useResume } from '../content/ResumeProvider';
 
 const linkGroups = [
   {
@@ -24,7 +25,7 @@ const linkGroups = [
   {
     title: 'Resources',
     links: [
-      { label: 'Resume (PDF)', href: '/JAMES_DANIEL_CV.pdf', download: 'James_Daniel_CV.pdf' },
+      { label: 'Resume', action: 'resume' },
       { label: 'SOLEASE', href: '#projects' },
     ],
   },
@@ -34,6 +35,7 @@ const Footer = () => {
   const year = new Date().getFullYear();
   // Mobile accordion: one group open at a time. From sm up every group is always visible.
   const [openGroup, setOpenGroup] = useState('Navigate');
+  const { openResume } = useResume();
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -95,13 +97,15 @@ const Footer = () => {
                     )}
                   >
                     <ul className="overflow-hidden sm:space-y-2.5">
-                      {group.links.map(({ label, href, external, download }) => (
+                      {group.links.map(({ label, href, external, action }) => {
+                        // The resume opens the in-page viewer, so it renders as a button
+                        const Tag = action === 'resume' ? 'button' : 'a';
+                        return (
                         <li key={label}>
-                          <a
-                            href={href}
+                          <Tag
+                            {...(action === 'resume' ? { type: 'button', onClick: openResume } : { href })}
                             {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
-                            {...(download && { download })}
-                            className="group flex sm:inline-flex min-h-11 sm:min-h-0 items-center justify-between sm:justify-start gap-1 text-[15px] sm:text-sm text-foreground/80 hover:text-foreground active:text-foreground transition-colors"
+                            className="group flex w-full sm:w-auto sm:inline-flex min-h-11 sm:min-h-0 items-center justify-between sm:justify-start gap-1 text-[15px] sm:text-sm text-foreground/80 hover:text-foreground active:text-foreground transition-colors"
                           >
                             {label}
                             {external && (
@@ -110,9 +114,10 @@ const Footer = () => {
                                 className="text-muted-foreground transition-all sm:opacity-0 sm:-translate-x-1 sm:group-hover:opacity-100 sm:group-hover:translate-x-0"
                               />
                             )}
-                          </a>
+                          </Tag>
                         </li>
-                      ))}
+                        );
+                      })}
                       {/* Breathing room under the last link while open on phones */}
                       <li aria-hidden="true" className="h-3 sm:hidden" />
                     </ul>

@@ -32,7 +32,7 @@ const principles = [
   },
 ];
 
-// `color` is the brand color shown on hover; omitted for monochrome logos
+// `color` is the brand color; omitted for monochrome logos, which follow the theme's foreground
 const stackGroups = [
   {
     label: 'Frontend',
@@ -79,7 +79,7 @@ const stackGroups = [
 ];
 
 // Sponsor-style logo strip. The list is rendered twice so the loop is seamless;
-// hovering pauses it and reveals each logo's brand color.
+// hovering pauses it. Logos always show their brand color.
 const Marquee = ({ items, duration = 40, reverse = false }) => (
   <div
     style={{ '--duration': `${duration}s` }}
@@ -97,16 +97,13 @@ const Marquee = ({ items, duration = 40, reverse = false }) => (
         {items.map(({ name, icon: Icon, color }) => (
           <li
             key={name}
-            style={color ? { '--brand-color': color } : undefined}
-            className="group/logo flex items-center gap-2 sm:gap-2.5 text-muted-foreground opacity-80 sm:opacity-70 hover:opacity-100 hover:text-foreground transition"
+            className="flex items-center gap-2 sm:gap-2.5 text-muted-foreground hover:text-foreground transition-colors"
           >
             {/* Icons size from font-size (1em), so they scale with the breakpoint */}
             <Icon
               size="1em"
-              className={cn(
-                'shrink-0 text-xl sm:text-[26px]',
-                color && 'transition-colors group-hover/logo:text-(--brand-color)'
-              )}
+              color={color}
+              className={cn('shrink-0 text-xl sm:text-[26px]', !color && 'text-foreground')}
             />
             <span className="text-sm sm:text-base md:text-lg font-semibold tracking-tight whitespace-nowrap">{name}</span>
           </li>

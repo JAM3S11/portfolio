@@ -4,6 +4,7 @@ import Header from "./common/Header";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ThemeProvider } from "./content/ThemeProvider";
+import { ResumeProvider } from "./content/ResumeProvider";
 import ExperienceSection from "./pages/ExperiencePage";
 import ExperiencePage from "./pages/ExperiencePage";
 import ProjectsPage from "./pages/ProjectsPage";
@@ -19,6 +20,7 @@ function App() {
 
   return (
     <ThemeProvider>
+    <ResumeProvider>
       <div className="flex flex-col min-h-screen scroll-smooth">
 
         <div className="relative z-10 flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -48,6 +50,7 @@ function App() {
         <Toaster position="top-center" richColors />
 
       </div>
+    </ResumeProvider>
     </ThemeProvider>
   );
 }

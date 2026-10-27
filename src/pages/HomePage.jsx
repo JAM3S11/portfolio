@@ -1,6 +1,7 @@
 import React from 'react';
-import { Mail, Github, Linkedin, ArrowRight, ArrowDownToLine, MapPin } from 'lucide-react';
+import { Mail, Github, Linkedin, ArrowRight, FileText, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useResume } from '@/content/ResumeProvider';
 
 const socialLinks = [
   { name: 'GitHub', icon: Github, url: import.meta.env.VITE_GITHUB_URL },
@@ -22,6 +23,8 @@ const fadeUp = {
 };
 
 const HomePage = () => {
+  const { openResume } = useResume();
+
   return (
     <section id="home" className="bg-background">
       <motion.div
@@ -98,15 +101,15 @@ const HomePage = () => {
             View my work
             <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
           </a>
-          <a
-            href="/JAMES_DANIEL_CV.pdf"
-            download="James_Daniel_CV.pdf"
+          <button
+            type="button"
+            onClick={openResume}
             className="inline-flex h-12 sm:h-auto w-full sm:w-auto items-center justify-center gap-1.5 rounded-full border border-border sm:border-0 text-[15px] sm:text-sm font-medium text-foreground sm:text-muted-foreground hover:text-foreground active:scale-[0.98] transition"
           >
-            <ArrowDownToLine size={15} />
-            <span className="sm:hidden">Download resume</span>
+            <FileText size={15} />
+            <span className="sm:hidden">View resume</span>
             <span className="hidden sm:inline">Resume</span>
-          </a>
+          </button>
 
           <span className="hidden sm:block h-4 w-px bg-border" />
 
